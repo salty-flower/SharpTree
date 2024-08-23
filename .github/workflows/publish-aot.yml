@@ -32,34 +32,22 @@ jobs:
           path: artifacts/publish/SharpTree/release/SharpTree*
           name: ${{ matrix.name }}-build
           compression-level: 0
-  build-docker-arm64:
-    strategy:
-      matrix:
-        include:
-          - target: linux-musl-arm64
-            name: linux-musl-arm64
-            platform: linux/arm64
-            tag: 9.0-preview-alpine-aot-arm64v8
-          - target: linux-arm64
-            name: linux-arm64
-            platform: linux/arm64
-            tag: 9.0-preview-noble-aot-arm64v8
-      fail-fast: false
-    runs-on: macos-latest
-    timeout-minutes: 10
-    container:
-      image: mcr.microsoft.com/dotnet/nightly/sdk:${{ matrix.tag }}
-      options: --platform ${{ matrix.platform }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build ${{ matrix.target }}
-        run: dotnet publish
-      - name: Upload ${{ matrix.target }} Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          path: artifacts/publish/SharpTree/release/SharpTree*
-          name: ${{ matrix.name }}-build
-          compression-level: 0
+  # build-docker-arm64:
+  #   strategy:
+  #     matrix:
+  #       include:
+  #         - target: linux-musl-arm64
+  #           name: linux-musl-arm64
+  #           platform: linux/arm64
+  #           tag: 9.0-preview-alpine-aot-arm64v8
+  #         - target: linux-arm64
+  #           name: linux-arm64
+  #           platform: linux/arm64
+  #           tag: 9.0-preview-noble-aot-arm64v8
+  #     <<: *no-fail-fast-strategy
+  #
+  #   runs-on: macos-latest
+  #   <<: *use-docker-sdk-with-matrix
   build-docker-amd64:
     strategy:
       matrix:
@@ -85,5 +73,5 @@ jobs:
           name: ${{ matrix.name }}-build
           compression-level: 0
   create-prelease:
-    needs: [build-native, build-docker-amd64, build-docker-arm64]
+    needs: [build-native, build-docker-amd64]
     uses: ./.github/workflows/create-releases.yml
