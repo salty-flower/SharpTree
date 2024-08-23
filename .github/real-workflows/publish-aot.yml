@@ -104,7 +104,7 @@ jobs:
           mkdir unzipped
           for dir in artifacts/*-build; do
             platform=$(basename "$dir" -build)
-            unzip -j "$dir"/*.zip -d "unzipped/$platform"
+            unzip -j "$dir" -d "unzipped/$platform"
             for file in unzipped/$platform/*; do
               if [[ -f "$file" ]]; then
                 extension="${file##*.}"
