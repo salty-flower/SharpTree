@@ -8,8 +8,9 @@ dotnet_setup: &dotnet_setup
 upload_artifact: &upload_artifact
   uses: actions/upload-artifact@v3
   with:
-    path: artifacts/publish/SharpTree/release/
+    path: artifacts/publish/SharpTree/release/SharpTree*
     name: ${{ matrix.name }}-build
+    compression-level: 0
 
 timeout-limit: &timeout-limit
   timeout-minutes: 10
