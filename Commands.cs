@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -15,7 +16,7 @@ public class Commands
     private int maxDepth = -1;
     private int currentDepth = 0;
     private bool includeFiles = false;
-    private DateTime lastFlush = DateTime.Now;
+    private readonly Stopwatch stopwatch = new();
 
     /// <summary>
     /// Display a tree of the specified directory.
@@ -33,6 +34,7 @@ public class Commands
         sb.AppendLine($"Volume serial number is {GetVolumeSerial(path)}");
         sb.AppendLine(path);
         sb.AppendLine();
+        stopwatch.Start();
 
         DisplayTree(path, "");
 
@@ -46,11 +48,11 @@ public class Commands
         if (maxDepth != -1 && currentDepth > maxDepth)
             return;
 
-        if ((DateTime.Now - lastFlush).TotalSeconds > 1)
+        if ((stopwatch.Elapsed).TotalSeconds > 1)
         {
             Console.Write(sb.ToString());
             sb.Clear();
-            lastFlush = DateTime.Now;
+            stopwatch.Restart();
         }
 
         var items = new DirectoryInfo(path)
