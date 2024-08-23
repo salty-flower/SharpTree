@@ -29,7 +29,7 @@ jobs:
 
             - name: Build with Bflat
               run: |
-                  dotnet msbuild -target:BuildBflat -p:BflatOutputPathExtraLayers=\${{ matrix.os }}-${{ matrix.arch }} -p:BflatExecutablePath=$PWD/bflat-sdk/bflat -p:BflatExtraArgs="--arch ${{ matrix.arch }} --os ${{ matrix.os }}"
+                  dotnet msbuild -target:BuildBflat -p:BflatOutputPathExtraLayers=/${{ matrix.os }}-${{ matrix.arch }} -p:BflatExecutablePath=$PWD/bflat-sdk/bflat -p:BflatExtraArgs="--arch ${{ matrix.arch }} --os ${{ matrix.os }}"
 
             - name: Examine contents
               run: |
