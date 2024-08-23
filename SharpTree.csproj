@@ -39,7 +39,7 @@
         <!-- Step 1: Run normal dotnet build -->
         <MSBuild
             Projects="$(MSBuildProjectFile)"
-            Properties="EmitCompilerGeneratedFiles=true;CompilerGeneratedFilesOutputPath=Generated"
+            Properties="EmitCompilerGeneratedFiles=true;CompilerGeneratedFilesOutputPath=Generated;TargetFramework=net8.0"
             Targets="Build"
         />
 
