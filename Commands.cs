@@ -22,6 +22,7 @@ public class Commands
     private int maxDepth = -1;
     private int currentDepth = 0;
     private bool includeFiles = false;
+    private int flushInterval = 500;
     private readonly Stopwatch stopwatch = new();
 
     /// <summary>
@@ -30,11 +31,18 @@ public class Commands
     /// <param name="path">-p, Root path of the tree</param>
     /// <param name="includeFiles">-f</param>
     /// <param name="maxDepth">-m</param>
+    /// <param name="flushInterval">-t, Flush output to stdout every x ms. -1 to disable.</param>
     [Command("")]
-    public void Tree(string path = ".", bool includeFiles = false, int maxDepth = -1)
+    public void Tree(
+        string path = ".",
+        bool includeFiles = false,
+        int maxDepth = -1,
+        int flushInterval = 1
+    )
     {
         this.maxDepth = maxDepth;
         this.includeFiles = includeFiles;
+        this.flushInterval = flushInterval;
         path = Path.GetFullPath(path);
         InitializeOutput(path);
         stopwatch.Start();
@@ -159,7 +167,7 @@ public class Commands
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void MaybeFlushOutput()
     {
-        if (stopwatch.Elapsed.TotalSeconds > 1)
+        if (flushInterval != -1 && stopwatch.Elapsed.TotalMilliseconds > flushInterval)
         {
             Console.Write(sb.ToString());
             sb.Clear();
