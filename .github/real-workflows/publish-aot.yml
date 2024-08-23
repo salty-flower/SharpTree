@@ -98,6 +98,6 @@ jobs:
     <<: *use-docker-sdk-with-matrix
   
   create-prelease:
-    needs: [build-native, build-docker]
+    needs: [build-native, build-docker-amd64, build-docker-arm64]
     uses: ./.github/workflows/create-releases.yml
 
