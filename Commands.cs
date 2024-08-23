@@ -89,7 +89,8 @@ public class Commands
 
 #if (ENABLE_MANUAL_CAPACITY_UPGRADE)
             ManualCapacityUpgrade(
-                thisLayerDirectories.Length + (includeFiles ? thisLayerFiles.Length : 0)
+                thisLayerDirectories.Length + (includeFiles ? thisLayerFiles.Length : 0),
+                indent.Length
             );
 #endif
 
@@ -147,8 +148,11 @@ public class Commands
 
 #if (ENABLE_MANUAL_CAPACITY_UPGRADE)
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ManualCapacityUpgrade(int itemCount) =>
-        sb.EnsureCapacity(sb.Length + itemCount * averageNameLength);
+    private void ManualCapacityUpgrade(int itemCount, int indentLength) =>
+        sb.Capacity = Math.Max(
+            sb.Capacity,
+            sb.Length + itemCount * (averageNameLength + indentLength)
+        );
 #endif
 
     private void DisplayFiles(string[] thisLayerFiles, string indent)
