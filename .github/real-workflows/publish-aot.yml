@@ -66,22 +66,22 @@ jobs:
       - name: Upload ${{ matrix.name }} Artifact
         <<: *upload_artifact
 
-  build-docker-arm64:
-    strategy:
-      matrix:
-        include:
-          - target: linux-musl-arm64
-            name: linux-musl-arm64
-            platform: linux/arm64
-            tag: 9.0-preview-alpine-aot-arm64v8
-          - target: linux-arm64
-            name: linux-arm64
-            platform: linux/arm64
-            tag: 9.0-preview-noble-aot-arm64v8
-      <<: *no-fail-fast-strategy
-
-    runs-on: macos-latest
-    <<: *use-docker-sdk-with-matrix
+  # build-docker-arm64:
+  #   strategy:
+  #     matrix:
+  #       include:
+  #         - target: linux-musl-arm64
+  #           name: linux-musl-arm64
+  #           platform: linux/arm64
+  #           tag: 9.0-preview-alpine-aot-arm64v8
+  #         - target: linux-arm64
+  #           name: linux-arm64
+  #           platform: linux/arm64
+  #           tag: 9.0-preview-noble-aot-arm64v8
+  #     <<: *no-fail-fast-strategy
+  #
+  #   runs-on: macos-latest
+  #   <<: *use-docker-sdk-with-matrix
 
   build-docker-amd64:
     strategy:
@@ -98,6 +98,6 @@ jobs:
     <<: *use-docker-sdk-with-matrix
   
   create-prelease:
-    needs: [build-native, build-docker-amd64, build-docker-arm64]
+    needs: [build-native, build-docker-amd64]
     uses: ./.github/workflows/create-releases.yml
 
