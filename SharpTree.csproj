@@ -1,6 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <LangVersion>preview</LangVersion>
         <TargetFramework>net9.0</TargetFramework>
     </PropertyGroup>
 
@@ -11,7 +14,6 @@
                 runtime; build; native; contentfiles; analyzers; buildtransitive
             </IncludeAssets>
         </PackageReference>
-        <PackageReference Include="PublishAotCompressed" Version="1.0.3" />
     </ItemGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
@@ -21,6 +23,5 @@
         <StripSymbols>true</StripSymbols>
         <PublishTrimmed>true</PublishTrimmed>
         <PublishSelfContained>true</PublishSelfContained>
-        <PublishLzmaCompressed>true</PublishLzmaCompressed>
     </PropertyGroup>
 </Project>
