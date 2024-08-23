@@ -53,14 +53,18 @@
             <BflatExecutablePath Condition="'$(BflatExecutablePath)' == ''">
                 bflat
             </BflatExecutablePath>
+            <BflatExtraArgs Condition="'$(BflatExtraArgs)' == ''" />
             <BflatOutputName>$(MSBuildProjectName)</BflatOutputName>
             <BflatOutputPathExtraLayers Condition="'$(BflatOutputPathExtraLayers)' == ''" />
-            <BflatOutputExtension Condition="'$(OS)' == 'Windows_NT'">.exe</BflatOutputExtension>
+            <BflatOutputExtension
+                Condition="('$(OS)' == 'Windows_NT') Or $(BflatExtraArgs.Contains('--os windows')) "
+            >
+                .exe
+            </BflatOutputExtension>
             <BflatOutputExtension Condition="'$(OS)' != 'Windows_NT'" />
             <BflatOutputPath>
-                $(SolutionDir)artifacts\bflat$(BflatOutputPathExtraLayers)\$(BflatOutputName)$(BflatOutputExtension)
+                $(SolutionDir)artifacts\bflat$(BflatOutputPathExtraLayers)\$(BflatOutputName)$(BflatOutputExtension.Trim())
             </BflatOutputPath>
-            <BflatExtraArgs Condition="'$(BflatExtraArgs)' == ''" />
         </PropertyGroup>
 
         <!-- Step 3: Create output directory if it doesn't exist -->
