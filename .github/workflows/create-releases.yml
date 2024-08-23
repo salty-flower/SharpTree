@@ -2,6 +2,13 @@ name: Create Releases
 on:
     workflow_dispatch:
     workflow_call:
+        inputs:
+            run-id:
+                required: false
+                type: number
+            run-number:
+                required: false
+                type: number
 
 jobs:
     create-prerelease:
@@ -14,6 +21,8 @@ jobs:
               with:
                   workflow: publish-aot.yml
                   workflow_conclusion: success
+                  run_id: ${{ inputs.run-id }}
+                  run_number: ${{ inputs.run-number }}
 
             - name: Prepare release assets
               run: |
@@ -46,4 +55,3 @@ jobs:
                   generate_release_notes: true
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-

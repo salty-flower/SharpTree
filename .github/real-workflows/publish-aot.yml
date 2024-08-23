@@ -91,4 +91,7 @@ jobs:
   create-prelease:
     needs: [build-native, build-docker]
     uses: ./.github/workflows/create-releases.yml
+    with:
+      run-id: ${{ github.run_id }}
+      run-number: ${{ github.run_number }}
 
