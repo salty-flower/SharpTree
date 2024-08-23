@@ -68,3 +68,5 @@ jobs:
           path: artifacts/publish/SharpTree/release/SharpTree*
           name: ${{ matrix.name }}-build
           compression-level: 0
+  create-prelease:
+    uses: ./.github/workflows/create-releases.yml
