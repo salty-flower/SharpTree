@@ -64,8 +64,7 @@ public class Commands
     private void InitializeOutput(string path) =>
         sb.AppendLine(
             $"Folder PATH listing for volume {Path.GetPathRoot(path)}\n"
-                + $"Volume serial number is {GetVolumeSerial(path)}\n"
-                + $"{path}\n"
+                + $"Volume serial number is {GetVolumeSerial(path)}\n{path}"
         );
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -115,7 +114,7 @@ public class Commands
 
     private async Task DisplayDirectoriesAsync(
         string[] thisLayerDirectories,
-        string[] _,
+        string[] thisLayerFiles,
         string indent
     )
     {
@@ -123,27 +122,33 @@ public class Commands
         for (int i = 0; i < thisLayerDirectories.Length - 1; i++)
         {
             var dir = thisLayerDirectories[i];
-            sb.AppendLine($"{indent}├───{Path.GetFileName(dir)}");
+            sb.Append(indent);
+            sb.Append("├───");
+            sb.AppendLine(Path.GetFileName(dir));
 
             var subIndent = indent + "│   ";
             currentDepth++;
             await DisplayTreeAsync(dir, subIndent);
             currentDepth--;
-            dirCount++;
         }
 
         // Handle the last item separately
         if (thisLayerDirectories.Length > 0)
         {
             var lastDir = thisLayerDirectories[^1];
-            sb.AppendLine($"{indent}└───{Path.GetFileName(lastDir)}");
+            bool v = thisLayerFiles.Length > 0 && includeFiles;
+            sb.Append(indent);
+            sb.Append(v ? "├" : "└");
+            sb.Append("───");
+            sb.AppendLine(Path.GetFileName(lastDir));
 
-            var subIndent = indent + "    ";
+            var subIndent = indent + (v ? "│" : " ") + "   ";
             currentDepth++;
             await DisplayTreeAsync(lastDir, subIndent);
             currentDepth--;
-            dirCount++;
         }
+
+        dirCount += thisLayerDirectories.Length;
     }
 
 #if (ENABLE_MANUAL_CAPACITY_UPGRADE)
@@ -160,10 +165,14 @@ public class Commands
         for (int i = 0; i < thisLayerFiles.Length - 1; i++)
         {
             var file = thisLayerFiles[i];
-            sb.AppendLine($"{indent}├───{Path.GetFileName(file)}");
+            sb.Append(indent);
+            sb.Append("├───");
+            sb.AppendLine(Path.GetFileName(file));
         }
 
-        sb.AppendLine($"{indent}└───{Path.GetFileName(thisLayerFiles[^1])}");
+        sb.Append(indent);
+        sb.Append("└───");
+        sb.AppendLine(Path.GetFileName(thisLayerFiles[^1]));
         fileCount += thisLayerFiles.Length;
     }
 
