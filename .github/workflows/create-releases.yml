@@ -16,7 +16,6 @@ jobs:
 
             - name: Prepare release assets
               run: |
-                  ls -laR
                   mkdir release_assets
                   for dir in *-build; do
                     platform=$(echo $dir | cut -d'-' -f1)
@@ -32,9 +31,10 @@ jobs:
                         ;;
                     esac
                   done
+                  ls -laR release_assets
 
             - name: Create GitHub pre-release
-              uses: softprops/action-gh-release@v1
+              uses: softprops/action-gh-release@v2
               with:
                   files: release_assets/*
                   prerelease: true
