@@ -18,6 +18,20 @@ timeout-limit: &timeout-limit
 no-fail-fast-strategy: &no-fail-fast-strategy
   fail-fast: false
 
+use-docker-sdk-with-matrix: &use-docker-sdk-with-matrix
+  <<: *timeout-limit
+
+  container:
+    image: mcr.microsoft.com/dotnet/nightly/sdk:${{ matrix.tag }}
+    options: --platform ${{ matrix.platform }}
+
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build ${{ matrix.target }}
+      run: dotnet publish
+    - name: Upload ${{ matrix.target }} Artifact
+      <<: *upload_artifact
+
 ---
 
 name: Publish AOT Builds
@@ -52,7 +66,24 @@ jobs:
       - name: Upload ${{ matrix.name }} Artifact
         <<: *upload_artifact
 
-  build-docker:
+  build-docker-arm64:
+    strategy:
+      matrix:
+        include:
+          - target: linux-musl-arm64
+            name: linux-musl-arm64
+            platform: linux/arm64
+            tag: 9.0-preview-alpine-aot-arm64v8
+          - target: linux-arm64
+            name: linux-arm64
+            platform: linux/arm64
+            tag: 9.0-preview-noble-aot-arm64v8
+      <<: *no-fail-fast-strategy
+
+    runs-on: macos-latest
+    <<: *use-docker-sdk-with-matrix
+
+  build-docker-amd64:
     strategy:
       matrix:
         include:
@@ -60,33 +91,11 @@ jobs:
             name: linux-musl-x64
             platform: linux/amd64
             tag: 9.0-preview-alpine-aot-amd64
-          - target: linux-x64
-            name: linux-x64
-            platform: linux/amd64
-            tag: 9.0-preview-azurelinux3.0-aot-amd64
-          # - target: linux-musl-arm64
-          #   name: linux-musl-arm64
-          #   platform: linux/arm64
-          #   tag: 9.0-preview-alpine-aot-arm64v8
-          # - target: linux-arm64
-          #   name: linux-arm64
-          #   platform: linux/arm64
-          #   tag: 9.0-preview-azurelinux3.0-aot-arm64v8
+
       <<: *no-fail-fast-strategy
 
     runs-on: ubuntu-latest
-    <<: *timeout-limit
-    
-    container:
-      image: mcr.microsoft.com/dotnet/nightly/sdk:${{ matrix.tag }}
-      # options: --platform ${{ matrix.platform }}
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build ${{ matrix.target }}
-        run: dotnet publish
-      - name: Upload ${{ matrix.target }} Artifact
-        <<: *upload_artifact
+    <<: *use-docker-sdk-with-matrix
   
   create-prelease:
     needs: [build-native, build-docker]
