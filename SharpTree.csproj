@@ -5,10 +5,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="ConsoleAppFramework" Version="4.2.4" />
-        <PackageReference Include="PublishAotCompressed" Version="1.0.3"/>
+        <PackageReference Include="ConsoleAppFramework" Version="5.2.3">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>
+                runtime; build; native; contentfiles; analyzers; buildtransitive
+            </IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="PublishAotCompressed" Version="1.0.3" />
     </ItemGroup>
-
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
         <UseCurrentRuntimeIdentifier>true</UseCurrentRuntimeIdentifier>
@@ -19,5 +23,4 @@
         <PublishSelfContained>true</PublishSelfContained>
         <PublishLzmaCompressed>true</PublishLzmaCompressed>
     </PropertyGroup>
-
 </Project>
