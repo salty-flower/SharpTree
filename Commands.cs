@@ -1,10 +1,11 @@
-//#define ENABLE_MANUAL_CAPACITY_UPGRADE
+#define ENABLE_MANUAL_CAPACITY_UPGRADE
 
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Tasks;
 using ConsoleAppFramework;
 
 namespace SharpTree;
@@ -14,6 +15,7 @@ public class Commands
 #if (ENABLE_MANUAL_CAPACITY_UPGRADE)
     private const int averageNameLength = 8;
 #endif
+    private const int bufferSize = 1024 * 1024;
     private readonly StringBuilder sb = new();
     private static readonly EnumerationOptions enumOptions =
         new() { IgnoreInaccessible = true, RecurseSubdirectories = false };
@@ -24,6 +26,7 @@ public class Commands
     private bool includeFiles = false;
     private int flushInterval = 500;
     private readonly Stopwatch stopwatch = new();
+    private BufferedStream bufferedOutput = null!;
 
     /// <summary>
     /// Display a tree of the specified directory.
@@ -33,7 +36,7 @@ public class Commands
     /// <param name="maxDepth">-m</param>
     /// <param name="flushInterval">-t, Flush output to stdout every x ms. -1 to disable.</param>
     [Command("")]
-    public void Tree(
+    public async Task Tree(
         string path = ".",
         bool includeFiles = false,
         int maxDepth = -1,
@@ -44,13 +47,17 @@ public class Commands
         this.includeFiles = includeFiles;
         this.flushInterval = flushInterval;
         path = Path.GetFullPath(path);
-        InitializeOutput(path);
-        stopwatch.Start();
 
-        DisplayTree(path, "");
+        using (bufferedOutput = new BufferedStream(Console.OpenStandardOutput(), bufferSize))
+        {
+            InitializeOutput(path);
+            stopwatch.Start();
 
-        FinalizeOutput();
-        Console.Write(sb.ToString());
+            await DisplayTreeAsync(path, "");
+
+            FinalizeOutput();
+            await WriteBufferAsync();
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -68,24 +75,31 @@ public class Commands
                 + $"{fileCount} File{(fileCount > 1 ? "(s)" : "")}"
         );
 
-    private void DisplayTree(string path, string indent)
+    private async Task DisplayTreeAsync(string path, string indent)
     {
         if (maxDepth != -1 && currentDepth > maxDepth)
             return;
 
-        MaybeFlushOutput();
+        await MaybeFlushOutputAsync();
 
         try
         {
             var thisLayerDirectories = Directory.GetDirectories(path, "*", enumOptions);
             var thisLayerFiles = Directory.GetFiles(path, "*", enumOptions);
+
+#if (ENABLE_MANUAL_CAPACITY_UPGRADE)
+            ManualCapacityUpgrade(
+                thisLayerDirectories.Length + (includeFiles ? thisLayerFiles.Length : 0)
+            );
+#endif
+
             if (thisLayerDirectories.Length > 0)
             {
-                DisplayDirectories(ref thisLayerDirectories, ref thisLayerFiles, indent);
+                await DisplayDirectoriesAsync(thisLayerDirectories, thisLayerFiles, indent);
             }
             if (includeFiles && thisLayerFiles.Length > 0)
             {
-                DisplayFiles(ref thisLayerDirectories, ref thisLayerFiles, indent);
+                DisplayFiles(thisLayerFiles, indent);
             }
         }
         catch (DirectoryNotFoundException)
@@ -98,17 +112,12 @@ public class Commands
         }
     }
 
-    private void DisplayDirectories(
-        ref string[] thisLayerDirectories,
-        ref string[] thisLayerFiles,
+    private async Task DisplayDirectoriesAsync(
+        string[] thisLayerDirectories,
+        string[] _,
         string indent
     )
     {
-#if (ENABLE_MANUAL_CAPACITY_UPGRADE)
-        ManualCapacityUpgrade(
-            thisLayerDirectories.Length + (includeFiles ? thisLayerFiles.Length : 0)
-        );
-#endif
         // Handle all but the last item
         for (int i = 0; i < thisLayerDirectories.Length - 1; i++)
         {
@@ -117,7 +126,7 @@ public class Commands
 
             var subIndent = indent + "│   ";
             currentDepth++;
-            DisplayTree(dir, subIndent);
+            await DisplayTreeAsync(dir, subIndent);
             currentDepth--;
             dirCount++;
         }
@@ -130,7 +139,7 @@ public class Commands
 
             var subIndent = indent + "    ";
             currentDepth++;
-            DisplayTree(lastDir, subIndent);
+            await DisplayTreeAsync(lastDir, subIndent);
             currentDepth--;
             dirCount++;
         }
@@ -142,18 +151,8 @@ public class Commands
         sb.EnsureCapacity(sb.Length + itemCount * averageNameLength);
 #endif
 
-    private void DisplayFiles(
-        ref string[] thisLayerDirectories,
-        ref string[] thisLayerFiles,
-        string indent
-    )
+    private void DisplayFiles(string[] thisLayerFiles, string indent)
     {
-#if (ENABLE_MANUAL_CAPACITY_UPGRADE)
-        ManualCapacityUpgrade(
-            thisLayerFiles.Length + (includeFiles ? thisLayerDirectories.Length : 0)
-        );
-#endif
-
         for (int i = 0; i < thisLayerFiles.Length - 1; i++)
         {
             var file = thisLayerFiles[i];
@@ -165,14 +164,21 @@ public class Commands
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void MaybeFlushOutput()
+    private async Task MaybeFlushOutputAsync()
     {
         if (flushInterval != -1 && stopwatch.Elapsed.TotalMilliseconds > flushInterval)
         {
-            Console.Write(sb.ToString());
+            await WriteBufferAsync();
             sb.Clear();
             stopwatch.Restart();
         }
+    }
+
+    private async Task WriteBufferAsync()
+    {
+        var buffer = sb.ToString();
+        await bufferedOutput.WriteAsync(Encoding.UTF8.GetBytes(buffer));
+        await bufferedOutput.FlushAsync();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
