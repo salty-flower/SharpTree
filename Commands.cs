@@ -6,8 +6,15 @@ using ConsoleAppFramework;
 
 namespace SharpTree;
 
-public static class Commands
+public class Commands
 {
+    private readonly StringBuilder sb = new();
+    private int dirCount = 0;
+    private int fileCount = 0;
+    private int maxDepth = -1;
+    private int currentDepth = 0;
+    private bool includeFiles = false;
+
     /// <summary>
     /// Display a tree of the specified directory.
     /// </summary>
@@ -15,36 +22,27 @@ public static class Commands
     /// <param name="includeFiles">-f</param>
     /// <param name="maxDepth">-m</param>
     [Command("tree")]
-    public static void Tree(string path = ".", bool includeFiles = false, int maxDepth = -1)
+    public void Tree(string path = ".", bool includeFiles = false, int maxDepth = -1)
     {
+        this.maxDepth = maxDepth;
+        this.includeFiles = includeFiles;
         path = Path.GetFullPath(path);
-        var sb = new StringBuilder();
         sb.AppendLine($"Folder PATH listing for volume {Path.GetPathRoot(path)}");
         sb.AppendLine($"Volume serial number is {GetVolumeSerial(path)}");
         sb.AppendLine(path);
         sb.AppendLine();
 
-        var (dirCount, fileCount) = DisplayTree(ref sb, path, "", includeFiles, maxDepth);
+        DisplayTree(path, "");
 
         sb.AppendLine();
         sb.AppendLine($"{dirCount} Dir(s), {fileCount} File(s)");
         Console.Write(sb.ToString());
     }
 
-    private static (int dirCount, int fileCount) DisplayTree(
-        ref StringBuilder sb,
-        string path,
-        string indent,
-        bool includeFiles,
-        int maxDepth,
-        int currentDepth = 0
-    )
+    private void DisplayTree(string path, string indent)
     {
         if (maxDepth != -1 && currentDepth > maxDepth)
-            return (0, 0);
-
-        var dirCount = 0;
-        var fileCount = 0;
+            return;
 
         var items = new DirectoryInfo(path)
             .GetFileSystemInfos()
@@ -63,16 +61,9 @@ public static class Commands
                 case DirectoryInfo dir:
                 {
                     var subIndent = indent + (isLast ? "    " : "│   ");
-                    var (subDirCount, subFileCount) = DisplayTree(
-                        ref sb,
-                        dir.FullName,
-                        subIndent,
-                        includeFiles,
-                        maxDepth,
-                        currentDepth + 1
-                    );
-                    dirCount += subDirCount + 1;
-                    fileCount += subFileCount;
+                    currentDepth++;
+                    DisplayTree(dir.FullName, subIndent);
+                    dirCount++;
                     break;
                 }
 
@@ -81,8 +72,6 @@ public static class Commands
                     break;
             }
         }
-
-        return (dirCount, fileCount);
     }
 
     private static string GetVolumeSerial(string path) =>

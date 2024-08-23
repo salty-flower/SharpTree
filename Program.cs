@@ -1,4 +1,6 @@
 using ConsoleAppFramework;
 using SharpTree;
 
-ConsoleApp.Run(args, Commands.Tree);
+var app = ConsoleApp.Create();
+app.Add<Commands>();
+app.Run(args);
