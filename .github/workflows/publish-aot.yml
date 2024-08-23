@@ -16,6 +16,7 @@ jobs:
           - os: macos-latest
             name: macos
             runtime: osx-x64
+      fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
@@ -29,23 +30,29 @@ jobs:
       - name: Upload ${{ matrix.name }} Artifact
         uses: actions/upload-artifact@v3
         with:
+          path: artifacts/publish/SharpTree/release/
           name: ${{ matrix.name }}-build
   build-docker:
     strategy:
       matrix:
         include:
           - target: linux-musl-arm64
+            name: linux-musl-arm64
             platform: linux/arm64
             tag: 9.0-preview-alpine-aot-arm64v8
           - target: linux-musl-x64
+            name: linux-musl-x64
             platform: linux/amd64
             tag: 9.0-preview-alpine-aot-amd64
           - target: linux-x64
+            name: linux-x64
             platform: linux/amd64
             tag: 9.0-preview-azurelinux3.0-aot-amd64
           - target: linux-arm64
+            name: linux-arm64
             platform: linux/arm64
             tag: 9.0-preview-azurelinux3.0-aot-arm64v8
+      fail-fast: false
     runs-on: ubuntu-latest
     timeout-minutes: 10
     container:
@@ -58,4 +65,5 @@ jobs:
       - name: Upload ${{ matrix.target }} Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.target }}-build
+          path: artifacts/publish/SharpTree/release/
+          name: ${{ matrix.name }}-build
