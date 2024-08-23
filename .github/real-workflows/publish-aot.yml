@@ -87,3 +87,39 @@ jobs:
         run: dotnet publish
       - name: Upload ${{ matrix.target }} Artifact
         <<: *upload_artifact
+
+  create-prerelease:
+    needs: [build-native, build-docker]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Unzip and rename artifacts
+        run: |
+          mkdir unzipped
+          for dir in artifacts/*-build; do
+            platform=$(basename "$dir" -build)
+            unzip -j "$dir"/*.zip -d "unzipped/$platform"
+            for file in unzipped/$platform/*; do
+              if [[ -f "$file" ]]; then
+                extension="${file##*.}"
+                new_name="${platform}-SharpTree.${extension}"
+                mv "$file" "unzipped/$platform/$new_name"
+              fi
+            done
+          done
+      - name: Create prerelease
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag_name="v$(date +'%Y.%m.%d-%H%M')"
+          gh release create $tag_name \
+            --title "Prerelease $tag_name" \
+            --notes "Auto-generated prerelease for commit ${{ github.sha }}" \
+            --prerelease \
+            unzipped/*/*
