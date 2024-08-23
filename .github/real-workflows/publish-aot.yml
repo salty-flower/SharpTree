@@ -22,8 +22,6 @@ no-fail-fast-strategy: &no-fail-fast-strategy
 name: Publish AOT Builds
 
 on:
-  push:
-    branches: ["main"]
   workflow_dispatch:
 
 jobs:
