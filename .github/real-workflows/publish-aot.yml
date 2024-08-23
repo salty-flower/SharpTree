@@ -87,4 +87,7 @@ jobs:
         run: dotnet publish
       - name: Upload ${{ matrix.target }} Artifact
         <<: *upload_artifact
+  
+  create-prelease:
+    uses: ./.github/workflows/create-releases.yml
 
