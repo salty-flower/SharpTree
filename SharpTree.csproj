@@ -60,7 +60,7 @@
             <BflatOutputPath>
                 $(SolutionDir)artifacts\bflat$(BflatOutputPathExtraLayers)\$(BflatOutputName)$(BflatOutputExtension)
             </BflatOutputPath>
-            <BflatExtraArgs />
+            <BflatExtraArgs Condition="'$(BflatExtraArgs)' == ''" />
         </PropertyGroup>
 
         <!-- Step 3: Create output directory if it doesn't exist -->
