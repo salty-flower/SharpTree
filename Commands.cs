@@ -27,6 +27,9 @@ public class Commands
     private int flushInterval = 500;
     private readonly Stopwatch stopwatch = new();
     private BufferedStream bufferedOutput = null!;
+    private const string oddLayerDirectoryColorString = "\u001b[0;36m";
+    private const string evenLayerDirectoryColorString = "\u001b[0;35m";
+    private const string colorResetString = "\u001b[0m";
 
     /// <summary>
     /// Display a tree of the specified directory.
@@ -118,13 +121,17 @@ public class Commands
         string indent
     )
     {
+        var directoryColorString =
+            currentDepth % 2 == 1 ? oddLayerDirectoryColorString : evenLayerDirectoryColorString;
         // Handle all but the last item
         for (int i = 0; i < thisLayerDirectories.Length - 1; i++)
         {
             var dir = thisLayerDirectories[i];
             sb.Append(indent);
-            sb.Append("├───");
-            sb.AppendLine(Path.GetFileName(dir));
+            sb.Append("├─── ");
+            sb.Append(directoryColorString);
+            sb.Append(Path.GetFileName(dir));
+            sb.AppendLine(colorResetString);
 
             var subIndent = indent + "│   ";
             currentDepth++;
@@ -139,8 +146,10 @@ public class Commands
             bool v = thisLayerFiles.Length > 0 && includeFiles;
             sb.Append(indent);
             sb.Append(v ? "├" : "└");
-            sb.Append("───");
-            sb.AppendLine(Path.GetFileName(lastDir));
+            sb.Append("─── ");
+            sb.Append(directoryColorString);
+            sb.Append(Path.GetFileName(lastDir));
+            sb.AppendLine(colorResetString);
 
             var subIndent = indent + (v ? "│" : " ") + "   ";
             currentDepth++;
@@ -166,12 +175,12 @@ public class Commands
         {
             var file = thisLayerFiles[i];
             sb.Append(indent);
-            sb.Append("├───");
+            sb.Append("├─── ");
             sb.AppendLine(Path.GetFileName(file));
         }
 
         sb.Append(indent);
-        sb.Append("└───");
+        sb.Append("└─── ");
         sb.AppendLine(Path.GetFileName(thisLayerFiles[^1]));
         fileCount += thisLayerFiles.Length;
     }
