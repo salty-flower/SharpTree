@@ -10,6 +10,9 @@ upload_artifact: &upload_artifact
   with:
     path: artifacts/publish/SharpTree/release/
 
+timeout-limit: &timeout-limit
+  timeout-minutes: 10
+
 ---
 
 name: Publish AOT Builds
@@ -34,12 +37,13 @@ jobs:
             runtime: osx-x64
     
     runs-on: ${{ matrix.os }}
+    <<: *timeout-limit
     
     steps:
       - uses: actions/checkout@v3
       - *dotnet_setup
       - name: Build ${{ matrix.name }}
-        run: dotnet publish -c Release ${{ matrix.runtime && format('-r {0}', matrix.runtime) || '' }}
+        run: dotnet publish
       - name: Upload ${{ matrix.name }} Artifact
         <<: *upload_artifact
         with:
@@ -63,6 +67,7 @@ jobs:
             tag: 9.0-preview-azurelinux3.0-aot-arm64v8
 
     runs-on: ubuntu-latest
+    <<: *timeout-limit
     
     container:
       image: mcr.microsoft.com/dotnet/nightly/sdk:${{ matrix.tag }}
@@ -71,7 +76,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build ${{ matrix.target }}
-        run: dotnet publish -r ${{ matrix.target }} -c Release
+        run: dotnet publish
       - name: Upload ${{ matrix.target }} Artifact
         <<: *upload_artifact
         with:
