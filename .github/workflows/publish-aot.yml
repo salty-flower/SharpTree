@@ -32,7 +32,35 @@ jobs:
           path: artifacts/publish/SharpTree/release/SharpTree*
           name: ${{ matrix.name }}-build
           compression-level: 0
-  build-docker:
+  build-docker-arm64:
+    strategy:
+      matrix:
+        include:
+          - target: linux-musl-arm64
+            name: linux-musl-arm64
+            platform: linux/arm64
+            tag: 9.0-preview-alpine-aot-arm64v8
+          - target: linux-arm64
+            name: linux-arm64
+            platform: linux/arm64
+            tag: 9.0-preview-noble-aot-arm64v8
+      fail-fast: false
+    runs-on: macos-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/dotnet/nightly/sdk:${{ matrix.tag }}
+      options: --platform ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build ${{ matrix.target }}
+        run: dotnet publish
+      - name: Upload ${{ matrix.target }} Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: artifacts/publish/SharpTree/release/SharpTree*
+          name: ${{ matrix.name }}-build
+          compression-level: 0
+  build-docker-amd64:
     strategy:
       matrix:
         include:
@@ -40,24 +68,12 @@ jobs:
             name: linux-musl-x64
             platform: linux/amd64
             tag: 9.0-preview-alpine-aot-amd64
-          - target: linux-x64
-            name: linux-x64
-            platform: linux/amd64
-            tag: 9.0-preview-azurelinux3.0-aot-amd64
-            # - target: linux-musl-arm64
-            #   name: linux-musl-arm64
-            #   platform: linux/arm64
-            #   tag: 9.0-preview-alpine-aot-arm64v8
-            # - target: linux-arm64
-            #   name: linux-arm64
-            #   platform: linux/arm64
-            #   tag: 9.0-preview-azurelinux3.0-aot-arm64v8
       fail-fast: false
     runs-on: ubuntu-latest
     timeout-minutes: 10
     container:
       image: mcr.microsoft.com/dotnet/nightly/sdk:${{ matrix.tag }}
-      # options: --platform ${{ matrix.platform }}
+      options: --platform ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
       - name: Build ${{ matrix.target }}
@@ -69,8 +85,5 @@ jobs:
           name: ${{ matrix.name }}-build
           compression-level: 0
   create-prelease:
-    needs: [build-native, build-docker]
+    needs: [build-native, build-docker-amd64, build-docker-arm64]
     uses: ./.github/workflows/create-releases.yml
-    with:
-      run-id: ${{ github.run_id }}
-      run-number: ${{ github.run_number }}
