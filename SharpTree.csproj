@@ -15,7 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Remove="Generated" />
+        <Compile Remove="Generated\**\*.cs" />
     </ItemGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
@@ -39,8 +39,8 @@
         <!-- Step 1: Run normal dotnet build -->
         <MSBuild
             Projects="$(MSBuildProjectFile)"
-            Properties="EmitCompilerGeneratedFiles=true;CompilerGeneratedFilesOutputPath=Generated"
-            Targets="Build"
+            Properties="EmitCompilerGeneratedFiles=true;CompilerGeneratedFilesOutputPath=Generated;TargetFramework=net8.0"
+            Targets="Restore;Build"
         />
 
         <!-- Step 2: Copy all files in the current folder to Generated -->
@@ -53,13 +53,18 @@
             <BflatExecutablePath Condition="'$(BflatExecutablePath)' == ''">
                 bflat
             </BflatExecutablePath>
+            <BflatExtraArgs Condition="'$(BflatExtraArgs)' == ''" />
             <BflatOutputName>$(MSBuildProjectName)</BflatOutputName>
-            <BflatOutputExtension Condition="'$(OS)' == 'Windows_NT'">.exe</BflatOutputExtension>
+            <BflatOutputPathExtraLayers Condition="'$(BflatOutputPathExtraLayers)' == ''" />
+            <BflatOutputExtension
+                Condition="('$(OS)' == 'Windows_NT') Or $(BflatExtraArgs.Contains('--os windows')) "
+            >
+                .exe
+            </BflatOutputExtension>
             <BflatOutputExtension Condition="'$(OS)' != 'Windows_NT'" />
             <BflatOutputPath>
-                $(SolutionDir)artifacts\bflat\$(BflatOutputName)$(BflatOutputExtension)
+                $(SolutionDir)artifacts\bflat$(BflatOutputPathExtraLayers)\$(BflatOutputName)$(BflatOutputExtension.Trim())
             </BflatOutputPath>
-            <BflatExtraArgs />
         </PropertyGroup>
 
         <!-- Step 3: Create output directory if it doesn't exist -->

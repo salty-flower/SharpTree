@@ -1,0 +1,49 @@
+name: Bflat Build
+
+on:
+    push:
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                arch: [x64, arm64]
+                os: [linux, windows]
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Download Bflat
+              uses: robinraju/release-downloader@v1
+              with:
+                  repository: "bflattened/bflat"
+                  latest: true
+                  fileName: "bflat-*-linux-glibc-x64.tar.gz"
+
+            - name: Extract Bflat
+              run: |
+                  mkdir bflat-sdk
+                  tar -xzf bflat-*-linux-glibc-x64.tar.gz -C bflat-sdk
+                  chmod +x $PWD/bflat-sdk/bflat
+
+            - name: Build with Bflat
+              run: |
+                  dotnet msbuild -target:BuildBflat -p:BflatOutputPathExtraLayers=/${{ matrix.os }}-${{ matrix.arch }} -p:BflatExecutablePath=$PWD/bflat-sdk/bflat -p:BflatExtraArgs="--arch ${{ matrix.arch }} --os ${{ matrix.os }}"
+
+            - name: Examine contents
+              run: |
+                  ls -laR artifacts
+
+            - name: Upload ${{ matrix.os }}-${{ matrix.arch }} Artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  path: artifacts/bflat/${{ matrix.os }}-${{ matrix.arch }}/SharpTree*
+                  name: ${{ matrix.os }}-${{ matrix.arch }}-bflat-build
+                  compression-level: 0
+
+    create-prelease:
+        needs: [build]
+        uses: ./.github/workflows/create-releases.yml
+        with:
+            workflow-file: "bflat-build.yml"
