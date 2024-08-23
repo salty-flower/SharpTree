@@ -15,7 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Remove="Generated" />
+        <Compile Remove="Generated\**\*.cs" />
     </ItemGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
