@@ -14,6 +14,10 @@
         </PackageReference>
     </ItemGroup>
 
+    <ItemGroup>
+        <Compile Remove="Generated" />
+    </ItemGroup>
+
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
         <UseCurrentRuntimeIdentifier>true</UseCurrentRuntimeIdentifier>
         <TrimMode>link</TrimMode>
@@ -24,4 +28,43 @@
         <DebugSymbols>false</DebugSymbols>
         <DebugType>none</DebugType>
     </PropertyGroup>
+
+    <Target Name="BuildBflat">
+        <!-- Step 0: Clear Generated directory if it exists and is not empty -->
+        <ItemGroup>
+            <GeneratedFiles Include="Generated\**\*.*" />
+        </ItemGroup>
+        <Delete Files="@(GeneratedFiles)" />
+
+        <!-- Step 1: Run normal dotnet build -->
+        <MSBuild
+            Projects="$(MSBuildProjectFile)"
+            Properties="EmitCompilerGeneratedFiles=true;CompilerGeneratedFilesOutputPath=Generated"
+            Targets="Build"
+        />
+
+        <!-- Step 2: Copy all files in the current folder to Generated -->
+        <ItemGroup>
+            <FilesToCopy Exclude="Generated\**\*.*" Include="*.cs" />
+        </ItemGroup>
+        <Copy DestinationFolder="Generated" SourceFiles="@(FilesToCopy)" />
+
+        <PropertyGroup>
+            <BflatOutputName>$(MSBuildProjectName)</BflatOutputName>
+            <BflatOutputExtension Condition="'$(OS)' == 'Windows_NT'">.exe</BflatOutputExtension>
+            <BflatOutputExtension Condition="'$(OS)' != 'Windows_NT'" />
+            <BflatOutputPath>
+                $(SolutionDir)artifacts\bflat\$(BflatOutputName)$(BflatOutputExtension)
+            </BflatOutputPath>
+        </PropertyGroup>
+
+        <!-- Step 3: Create output directory if it doesn't exist -->
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName($(BflatOutputPath)))" />
+
+        <!-- Step 4: Run bflat build inside Generated folder with unique output name and location -->
+        <Exec
+            Command="bflat build -Ot --no-stacktrace-data --no-globalization --no-reflection --no-debug-info --no-exception-messages --out $(BflatOutputPath.Trim())"
+            WorkingDirectory="Generated"
+        />
+    </Target>
 </Project>

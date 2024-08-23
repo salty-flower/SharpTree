@@ -4,5 +4,6 @@
         <Nullable>enable</Nullable>
         <LangVersion>preview</LangVersion>
         <UseArtifactsOutput>true</UseArtifactsOutput>
+        <SolutionDir Condition="'$(SolutionDir)' == ''">$(MSBuildThisFileDirectory)</SolutionDir>
     </PropertyGroup>
 </Project>
