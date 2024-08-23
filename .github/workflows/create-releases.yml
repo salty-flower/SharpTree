@@ -7,16 +7,15 @@ jobs:
         permissions:
             contents: write
         steps:
-            - uses: actions/checkout@v4
             - name: Download all artifacts
-              uses: actions/download-artifact@v4
+              uses: dawidd6/action-download-artifact@v6
               with:
-                  path: artifacts
+                  workflow: publish-aot.yml
+                  workflow_conclusion: success
             - name: Unzip and rename artifacts
               run: |
-                  mkdir unzipped
-                  ls -lRa artifacts
                   ls -lRa
+                  mkdir unzipped
                   for dir in artifacts/*-build; do
                       platform=$(basename "$dir" -build)
                       unzip -j "$dir" -d "unzipped/$platform"
