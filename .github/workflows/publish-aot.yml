@@ -1,5 +1,8 @@
 name: Publish AOT Builds
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 jobs:
   build-native:
@@ -10,10 +13,8 @@ jobs:
             name: windows
           - os: ubuntu-latest
             name: linux
-            runtime: linux-x64
           - os: macos-latest
             name: macos
-            runtime: osx-x64
       fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
@@ -35,10 +36,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - target: linux-musl-arm64
-            name: linux-musl-arm64
-            platform: linux/arm64
-            tag: 9.0-preview-alpine-aot-arm64v8
           - target: linux-musl-x64
             name: linux-musl-x64
             platform: linux/amd64
@@ -47,10 +44,14 @@ jobs:
             name: linux-x64
             platform: linux/amd64
             tag: 9.0-preview-azurelinux3.0-aot-amd64
-          - target: linux-arm64
-            name: linux-arm64
-            platform: linux/arm64
-            tag: 9.0-preview-azurelinux3.0-aot-arm64v8
+            # - target: linux-musl-arm64
+            #   name: linux-musl-arm64
+            #   platform: linux/arm64
+            #   tag: 9.0-preview-alpine-aot-arm64v8
+            # - target: linux-arm64
+            #   name: linux-arm64
+            #   platform: linux/arm64
+            #   tag: 9.0-preview-azurelinux3.0-aot-arm64v8
       fail-fast: false
     runs-on: ubuntu-latest
     timeout-minutes: 10
