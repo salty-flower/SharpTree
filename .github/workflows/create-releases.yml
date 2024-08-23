@@ -31,7 +31,7 @@ jobs:
                         cp "$dir"/SharpTree "release_assets/SharpTree-$dir"
                         ;;
                       windows)
-                        cp "$dir"/SharpTree.exe "release_assets/SharpTree-$dir.exe"
+                        cp "$dir"/SharpTree* "release_assets/SharpTree-$dir.exe"
                         ;;
                       macos)
                         find "$dir" -type f -not -name "*.dSYM" -exec cp {} "release_assets/SharpTree-$dir" \;
