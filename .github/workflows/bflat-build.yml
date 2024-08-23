@@ -1,0 +1,32 @@
+name: Bflat Build
+
+on:
+    push:
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                arch: [x86, x64, arm64]
+                os: [linux, windows]
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Download Bflat
+              uses: robinraju/release-downloader@v1
+              with:
+                  repository: "bflattened/bflat"
+                  latest: true
+                  fileName: "bflat-*-linux-glibc-x64.tar.gz"
+
+            - name: Extract Bflat
+              run: |
+                  mkdir bflat-sdk
+                  tar -xzf bflat-*-linux-glibc-x64.tar.gz -C bflat-sdk
+                  chmod +x $PWD/bflat-sdk/bflat
+
+            - name: Build with Bflat
+              run: |
+                  dotnet msbuild -target:BuildBflat -p:BflatExecutablePath=$PWD/bflat/bflat -p:BflatExtraArgs="--arch ${{ matrix.arch }} --os ${{ matrix.os }}"
