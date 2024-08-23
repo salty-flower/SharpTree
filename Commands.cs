@@ -12,10 +12,10 @@ public static class Commands
     /// Display a tree of the specified directory.
     /// </summary>
     /// <param name="path">-p, Root path of the tree</param>
-    /// <param name="directoriesOnly">-d</param>
+    /// <param name="includeFiles">-f</param>
     /// <param name="maxDepth">-m</param>
     [Command("tree")]
-    public static void Tree(string path = ".", bool directoriesOnly = false, int maxDepth = -1)
+    public static void Tree(string path = ".", bool includeFiles = false, int maxDepth = -1)
     {
         path = Path.GetFullPath(path);
         var sb = new StringBuilder();
@@ -24,7 +24,7 @@ public static class Commands
         sb.AppendLine(path);
         sb.AppendLine();
 
-        var (dirCount, fileCount) = DisplayTree(ref sb, path, "", directoriesOnly, maxDepth);
+        var (dirCount, fileCount) = DisplayTree(ref sb, path, "", includeFiles, maxDepth);
 
         sb.AppendLine();
         sb.AppendLine($"{dirCount} Dir(s), {fileCount} File(s)");
@@ -35,7 +35,7 @@ public static class Commands
         ref StringBuilder sb,
         string path,
         string indent,
-        bool directoriesOnly,
+        bool includeFiles,
         int maxDepth,
         int currentDepth = 0
     )
@@ -48,7 +48,7 @@ public static class Commands
 
         var items = new DirectoryInfo(path)
             .GetFileSystemInfos()
-            .Where(item => !directoriesOnly || item is DirectoryInfo)
+            .Where(item => includeFiles || item is DirectoryInfo)
             .OrderBy(item => item is DirectoryInfo ? 0 : 1)
             .ThenBy(item => item.Name);
 
@@ -67,7 +67,7 @@ public static class Commands
                         ref sb,
                         dir.FullName,
                         subIndent,
-                        directoriesOnly,
+                        includeFiles,
                         maxDepth,
                         currentDepth + 1
                     );
