@@ -50,12 +50,16 @@
         <Copy DestinationFolder="Generated" SourceFiles="@(FilesToCopy)" />
 
         <PropertyGroup>
+            <BflatExecutablePath Condition="'$(BflatExecutablePath)' == ''">
+                bflat
+            </BflatExecutablePath>
             <BflatOutputName>$(MSBuildProjectName)</BflatOutputName>
             <BflatOutputExtension Condition="'$(OS)' == 'Windows_NT'">.exe</BflatOutputExtension>
             <BflatOutputExtension Condition="'$(OS)' != 'Windows_NT'" />
             <BflatOutputPath>
                 $(SolutionDir)artifacts\bflat\$(BflatOutputName)$(BflatOutputExtension)
             </BflatOutputPath>
+            <BflatExtraArgs />
         </PropertyGroup>
 
         <!-- Step 3: Create output directory if it doesn't exist -->
@@ -63,7 +67,7 @@
 
         <!-- Step 4: Run bflat build inside Generated folder with unique output name and location -->
         <Exec
-            Command="bflat build -Ot --no-stacktrace-data --no-globalization --no-reflection --no-debug-info --no-exception-messages --out $(BflatOutputPath.Trim())"
+            Command="$(BflatExecutablePath.Trim()) build -Ot --no-stacktrace-data --no-globalization --no-reflection --no-debug-info --no-exception-messages $(BflatExtraArgs) --out $(BflatOutputPath.Trim())"
             WorkingDirectory="Generated"
         />
     </Target>
