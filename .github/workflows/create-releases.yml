@@ -2,6 +2,10 @@ name: Create Releases
 on:
     workflow_dispatch:
     workflow_call:
+        inputs:
+            workflow-file:
+                type: string
+                required: true
 
 jobs:
     create-prerelease:
@@ -12,7 +16,7 @@ jobs:
             - name: Download all artifacts
               uses: dawidd6/action-download-artifact@v6
               with:
-                  workflow: publish-aot.yml
+                  workflow: ${{ inputs.workflow-file }}
                   workflow_conclusion: success
                   run_id: ${{ github.run_id }}
                   run_number: ${{ github.run_number }}
