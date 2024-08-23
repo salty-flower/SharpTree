@@ -40,7 +40,7 @@
         <MSBuild
             Projects="$(MSBuildProjectFile)"
             Properties="EmitCompilerGeneratedFiles=true;CompilerGeneratedFilesOutputPath=Generated;TargetFramework=net8.0"
-            Targets="Build"
+            Targets="Restore;Build"
         />
 
         <!-- Step 2: Copy all files in the current folder to Generated -->
