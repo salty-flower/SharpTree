@@ -9,11 +9,13 @@ namespace SharpTree;
 public class Commands
 {
     private readonly StringBuilder sb = new();
+    private static readonly EnumerationOptions enumOptions = new() { IgnoreInaccessible = true };
     private int dirCount = 0;
     private int fileCount = 0;
     private int maxDepth = -1;
     private int currentDepth = 0;
     private bool includeFiles = false;
+    private DateTime lastFlush = DateTime.Now;
 
     /// <summary>
     /// Display a tree of the specified directory.
@@ -44,8 +46,15 @@ public class Commands
         if (maxDepth != -1 && currentDepth > maxDepth)
             return;
 
+        if ((DateTime.Now - lastFlush).TotalSeconds > 1)
+        {
+            Console.Write(sb.ToString());
+            sb.Clear();
+            lastFlush = DateTime.Now;
+        }
+
         var items = new DirectoryInfo(path)
-            .GetFileSystemInfos()
+            .GetFileSystemInfos("*", enumOptions)
             .Where(item => includeFiles || item is DirectoryInfo)
             .OrderBy(item => item is DirectoryInfo ? 0 : 1)
             .ThenBy(item => item.Name);
