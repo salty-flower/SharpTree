@@ -1,0 +1,73 @@
+name: Publish AOT Builds
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  build-native:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            name: windows
+          - os: ubuntu-latest
+            name: linux
+          - os: macos-latest
+            name: macos
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9"
+      - name: Build ${{ matrix.name }}
+        run: dotnet publish
+      - name: Upload ${{ matrix.name }} Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: artifacts/publish/SharpTree/release/SharpTree*
+          name: ${{ matrix.name }}-build
+          compression-level: 0
+  build-docker:
+    strategy:
+      matrix:
+        include:
+          - target: linux-musl-x64
+            name: linux-musl-x64
+            platform: linux/amd64
+            tag: 9.0-preview-alpine-aot-amd64
+          - target: linux-x64
+            name: linux-x64
+            platform: linux/amd64
+            tag: 9.0-preview-azurelinux3.0-aot-amd64
+            # - target: linux-musl-arm64
+            #   name: linux-musl-arm64
+            #   platform: linux/arm64
+            #   tag: 9.0-preview-alpine-aot-arm64v8
+            # - target: linux-arm64
+            #   name: linux-arm64
+            #   platform: linux/arm64
+            #   tag: 9.0-preview-azurelinux3.0-aot-arm64v8
+      fail-fast: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/dotnet/nightly/sdk:${{ matrix.tag }}
+      # options: --platform ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build ${{ matrix.target }}
+        run: dotnet publish
+      - name: Upload ${{ matrix.target }} Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: artifacts/publish/SharpTree/release/SharpTree*
+          name: ${{ matrix.name }}-build
+          compression-level: 0
+  create-prelease:
+    needs: [build-native, build-docker]
+    uses: ./.github/workflows/create-releases.yml

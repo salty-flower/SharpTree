@@ -1,0 +1,49 @@
+name: Create Releases
+on:
+    workflow_dispatch:
+    workflow_call:
+
+jobs:
+    create-prerelease:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - name: Download all artifacts
+              uses: dawidd6/action-download-artifact@v6
+              with:
+                  workflow: publish-aot.yml
+                  workflow_conclusion: success
+
+            - name: Prepare release assets
+              run: |
+                  mkdir release_assets
+                  for dir in *-build; do
+                    platform=$(echo $dir | cut -d'-' -f1)
+                    case $platform in
+                      linux)
+                        cp "$dir"/SharpTree "release_assets/SharpTree-$dir"
+                        ;;
+                      windows)
+                        cp "$dir"/SharpTree.exe "release_assets/SharpTree-$dir.exe"
+                        ;;
+                      macos)
+                        find "$dir" -type f -not -name "*.dSYM" -exec cp {} "release_assets/SharpTree-$dir" \;
+                        ;;
+                    esac
+                  done
+                  ls -laR release_assets
+            - name: Generate release tag
+              id: tag
+              run: |
+                  echo "::set-output name=release_tag::Action_$(date +"%Y.%m.%d_%H-%M")"
+            - name: Create GitHub pre-release
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: release_assets/*
+                  tag_name: ${{ steps.tag.outputs.release_tag }}
+                  prerelease: true
+                  generate_release_notes: true
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
