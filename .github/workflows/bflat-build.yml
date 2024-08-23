@@ -47,3 +47,4 @@ jobs:
         uses: ./.github/workflows/create-releases.yml
         with:
             workflow-file: "bflat-build.yml"
+            custom-tag: "Bflat"
