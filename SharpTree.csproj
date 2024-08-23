@@ -54,10 +54,11 @@
                 bflat
             </BflatExecutablePath>
             <BflatOutputName>$(MSBuildProjectName)</BflatOutputName>
+            <BflatOutputPathExtraLayers Condition="'$(BflatOutputPathExtraLayers)' == ''" />
             <BflatOutputExtension Condition="'$(OS)' == 'Windows_NT'">.exe</BflatOutputExtension>
             <BflatOutputExtension Condition="'$(OS)' != 'Windows_NT'" />
             <BflatOutputPath>
-                $(SolutionDir)artifacts\bflat\$(BflatOutputName)$(BflatOutputExtension)
+                $(SolutionDir)artifacts\bflat$(BflatOutputPathExtraLayers)\$(BflatOutputName)$(BflatOutputExtension)
             </BflatOutputPath>
             <BflatExtraArgs />
         </PropertyGroup>

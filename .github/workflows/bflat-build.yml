@@ -29,12 +29,12 @@ jobs:
 
             - name: Build with Bflat
               run: |
-                  dotnet msbuild -target:BuildBflat -p:BflatExecutablePath=$PWD/bflat-sdk/bflat -p:BflatExtraArgs="--arch ${{ matrix.arch }} --os ${{ matrix.os }}"
+                  dotnet msbuild -target:BuildBflat -p:BflatOutputPathExtraLayers=\${{ matrix.os }}-${{ matrix.arch }} -p:BflatExecutablePath=$PWD/bflat-sdk/bflat -p:BflatExtraArgs="--arch ${{ matrix.arch }} --os ${{ matrix.os }}"
 
             - name: Upload ${{ matrix.os }}-${{ matrix.arch }} Artifact
               uses: actions/upload-artifact@v4
               with:
-                  path: artifacts/bflat/SharpTree*
+                  path: artifacts/bflat/${{ matrix.os }}-${{ matrix.arch }}/SharpTree*
                   name: ${{ matrix.os }}-${{ matrix.arch }}-bflat-build
                   compression-level: 0
 
