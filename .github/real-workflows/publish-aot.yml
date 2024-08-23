@@ -9,9 +9,13 @@ upload_artifact: &upload_artifact
   uses: actions/upload-artifact@v3
   with:
     path: artifacts/publish/SharpTree/release/
+    name: ${{ matrix.name }}-build
 
 timeout-limit: &timeout-limit
   timeout-minutes: 10
+
+no-fail-fast-strategy: &no-fail-fast-strategy
+  fail-fast: false
 
 ---
 
@@ -35,6 +39,7 @@ jobs:
           - os: macos-latest
             name: macos
             runtime: osx-x64
+      <<: *no-fail-fast-strategy
     
     runs-on: ${{ matrix.os }}
     <<: *timeout-limit
@@ -46,25 +51,28 @@ jobs:
         run: dotnet publish
       - name: Upload ${{ matrix.name }} Artifact
         <<: *upload_artifact
-        with:
-          name: ${{ matrix.name }}-build
 
   build-docker:
     strategy:
       matrix:
         include:
           - target: linux-musl-arm64
+            name: linux-musl-arm64
             platform: linux/arm64
             tag: 9.0-preview-alpine-aot-arm64v8
           - target: linux-musl-x64
+            name: linux-musl-x64
             platform: linux/amd64
             tag: 9.0-preview-alpine-aot-amd64
           - target: linux-x64
+            name: linux-x64
             platform: linux/amd64
             tag: 9.0-preview-azurelinux3.0-aot-amd64
           - target: linux-arm64
+            name: linux-arm64
             platform: linux/arm64
             tag: 9.0-preview-azurelinux3.0-aot-arm64v8
+      <<: *no-fail-fast-strategy
 
     runs-on: ubuntu-latest
     <<: *timeout-limit
@@ -79,5 +87,3 @@ jobs:
         run: dotnet publish
       - name: Upload ${{ matrix.target }} Artifact
         <<: *upload_artifact
-        with:
-          name: ${{ matrix.target }}-build
