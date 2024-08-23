@@ -55,9 +55,29 @@ public class Commands
             stopwatch.Restart();
         }
 
-        var items = new DirectoryInfo(path)
-            .GetFileSystemInfos("*", enumOptions)
-            .Where(item => includeFiles || item is DirectoryInfo)
+        DirectoryInfo[] directories;
+        FileInfo[] files;
+
+        try
+        {
+            var di = new DirectoryInfo(path);
+            directories = di.GetDirectories("*", enumOptions);
+            files = includeFiles ? di.GetFiles("*", enumOptions) : [];
+        }
+        catch (DirectoryNotFoundException)
+        {
+            sb.AppendLine($"{indent}└───[Invalid Directory]");
+            return;
+        }
+        catch (IOException)
+        {
+            sb.AppendLine($"{indent}└───[Inaccessible]");
+            return;
+        }
+
+        var items = directories
+            .Cast<FileSystemInfo>()
+            .Concat(files)
             .OrderBy(item => item is DirectoryInfo ? 0 : 1)
             .ThenBy(item => item.Name);
 
