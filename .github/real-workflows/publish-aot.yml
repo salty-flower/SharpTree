@@ -89,5 +89,6 @@ jobs:
         <<: *upload_artifact
   
   create-prelease:
+    needs: [build-native, build-docker]
     uses: ./.github/workflows/create-releases.yml
 
