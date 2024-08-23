@@ -23,7 +23,7 @@ public class Commands
     /// <param name="path">-p, Root path of the tree</param>
     /// <param name="includeFiles">-f</param>
     /// <param name="maxDepth">-m</param>
-    [Command("tree")]
+    [Command("")]
     public void Tree(string path = ".", bool includeFiles = false, int maxDepth = -1)
     {
         this.maxDepth = maxDepth;
