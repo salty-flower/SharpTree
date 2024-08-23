@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using ConsoleAppFramework;
 
 namespace SharpTree;
@@ -17,18 +18,21 @@ public static class Commands
     public static void Tree(string path = ".", bool directoriesOnly = false, int maxDepth = -1)
     {
         path = Path.GetFullPath(path);
-        Console.WriteLine($"Folder PATH listing for volume {Path.GetPathRoot(path)}");
-        Console.WriteLine($"Volume serial number is {GetVolumeSerial(path)}");
-        Console.WriteLine(path);
-        Console.WriteLine();
+        var sb = new StringBuilder();
+        sb.AppendLine($"Folder PATH listing for volume {Path.GetPathRoot(path)}");
+        sb.AppendLine($"Volume serial number is {GetVolumeSerial(path)}");
+        sb.AppendLine(path);
+        sb.AppendLine();
 
-        var (dirCount, fileCount) = DisplayTree(path, "", directoriesOnly, maxDepth);
+        var (dirCount, fileCount) = DisplayTree(ref sb, path, "", directoriesOnly, maxDepth);
 
-        Console.WriteLine();
-        Console.WriteLine($"{dirCount} Dir(s), {fileCount} File(s)");
+        sb.AppendLine();
+        sb.AppendLine($"{dirCount} Dir(s), {fileCount} File(s)");
+        Console.Write(sb.ToString());
     }
 
     private static (int dirCount, int fileCount) DisplayTree(
+        ref StringBuilder sb,
         string path,
         string indent,
         bool directoriesOnly,
@@ -53,24 +57,28 @@ public static class Commands
         )
         {
             var connector = isLast ? "└───" : "├───";
-            Console.WriteLine($"{indent}{connector}{item.Name}");
+            sb.AppendLine($"{indent}{connector}{item.Name}");
+            switch (item)
+            {
+                case DirectoryInfo dir:
+                {
+                    var subIndent = indent + (isLast ? "    " : "│   ");
+                    var (subDirCount, subFileCount) = DisplayTree(
+                        ref sb,
+                        dir.FullName,
+                        subIndent,
+                        directoriesOnly,
+                        maxDepth,
+                        currentDepth + 1
+                    );
+                    dirCount += subDirCount + 1;
+                    fileCount += subFileCount;
+                    break;
+                }
 
-            if (item is DirectoryInfo dir)
-            {
-                var subIndent = indent + (isLast ? "    " : "│   ");
-                var (subDirCount, subFileCount) = DisplayTree(
-                    dir.FullName,
-                    subIndent,
-                    directoriesOnly,
-                    maxDepth,
-                    currentDepth + 1
-                );
-                dirCount += subDirCount + 1;
-                fileCount += subFileCount;
-            }
-            else
-            {
-                fileCount++;
+                default:
+                    fileCount++;
+                    break;
             }
         }
 
