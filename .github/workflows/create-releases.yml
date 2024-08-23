@@ -1,6 +1,7 @@
 name: Create Releases
 on:
     workflow_dispatch:
+
 jobs:
     create-prerelease:
         runs-on: ubuntu-latest
@@ -12,29 +13,32 @@ jobs:
               with:
                   workflow: publish-aot.yml
                   workflow_conclusion: success
-            - name: Unzip and rename artifacts
+
+            - name: Prepare release assets
               run: |
-                  ls -lRa
-                  mkdir unzipped
-                  for dir in artifacts/*-build; do
-                      platform=$(basename "$dir" -build)
-                      unzip -j "$dir" -d "unzipped/$platform"
-                      for file in unzipped/$platform/*; do
-                      if [[ -f "$file" ]]; then
-                          extension="${file##*.}"
-                          new_name="${platform}-SharpTree.${extension}"
-                          mv "$file" "unzipped/$platform/$new_name"
-                      fi
-                      done
+                  ls -laR
+                  mkdir release_assets
+                  for dir in *-build; do
+                    platform=$(echo $dir | cut -d'-' -f1)
+                    case $platform in
+                      linux)
+                        cp "$dir"/SharpTree "release_assets/SharpTree-$dir"
+                        ;;
+                      windows)
+                        cp "$dir"/SharpTree.exe "release_assets/SharpTree-$dir.exe"
+                        ;;
+                      macos)
+                        find "$dir" -type f -not -name "*.dSYM" -exec cp {} "release_assets/SharpTree-$dir" \;
+                        ;;
+                    esac
                   done
-                  ls -lRa unzipped
-            - name: Create prerelease
+
+            - name: Create GitHub pre-release
+              uses: softprops/action-gh-release@v1
+              with:
+                  files: release_assets/*
+                  prerelease: true
+                  generate_release_notes: true
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              run: |
-                  tag_name="v$(date +'%Y.%m.%d-%H%M')"
-                  gh release create $tag_name \
-                      --title "Prerelease $tag_name" \
-                      --notes "Auto-generated prerelease for commit ${{ github.sha }}" \
-                      --prerelease \
-                      unzipped/*/*
+
