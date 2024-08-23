@@ -403,3 +403,4 @@ FodyWeavers.xsd
 
 package.json
 pnpm-lock.yaml
+*.sln
