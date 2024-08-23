@@ -2,13 +2,6 @@ name: Create Releases
 on:
     workflow_dispatch:
     workflow_call:
-        inputs:
-            run-id:
-                required: false
-                type: number
-            run-number:
-                required: false
-                type: number
 
 jobs:
     create-prerelease:
@@ -21,8 +14,8 @@ jobs:
               with:
                   workflow: publish-aot.yml
                   workflow_conclusion: success
-                  run_id: ${{ inputs.run-id }}
-                  run_number: ${{ inputs.run-number }}
+                  run_id: ${{ github.run_id }}
+                  run_number: ${{ github.run_number }}
 
             - name: Prepare release assets
               run: |
