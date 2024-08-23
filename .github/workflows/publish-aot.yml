@@ -1,0 +1,59 @@
+name: Publish AOT Builds
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+jobs:
+  build-native:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            name: windows
+          - os: ubuntu-latest
+            name: linux
+            runtime: linux-x64
+          - os: macos-latest
+            name: macos
+            runtime: osx-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "9"
+      - name: Build ${{ matrix.name }}
+        run: dotnet publish -c Release ${{ matrix.runtime && format('-r {0}', matrix.runtime) || '' }}
+      - name: Upload ${{ matrix.name }} Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.name }}-build
+  build-docker:
+    strategy:
+      matrix:
+        include:
+          - target: linux-musl-arm64
+            platform: linux/arm64
+            tag: 9.0-preview-alpine-aot-arm64v8
+          - target: linux-musl-x64
+            platform: linux/amd64
+            tag: 9.0-preview-alpine-aot-amd64
+          - target: linux-x64
+            platform: linux/amd64
+            tag: 9.0-preview-azurelinux3.0-aot-amd64
+          - target: linux-arm64
+            platform: linux/arm64
+            tag: 9.0-preview-azurelinux3.0-aot-arm64v8
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/dotnet/nightly/sdk:${{ matrix.tag }}
+      options: --platform ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build ${{ matrix.target }}
+        run: dotnet publish -r ${{ matrix.target }} -c Release
+      - name: Upload ${{ matrix.target }} Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.target }}-build
