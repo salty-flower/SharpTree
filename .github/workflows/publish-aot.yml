@@ -18,15 +18,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "9"
       - name: Build ${{ matrix.name }}
         run: dotnet publish
       - name: Upload ${{ matrix.name }} Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: artifacts/publish/SharpTree/release/SharpTree*
           name: ${{ matrix.name }}-build
@@ -56,13 +56,13 @@ jobs:
     timeout-minutes: 10
     container:
       image: mcr.microsoft.com/dotnet/nightly/sdk:${{ matrix.tag }}
-      options: --platform ${{ matrix.platform }}
+      # options: --platform ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Build ${{ matrix.target }}
         run: dotnet publish
       - name: Upload ${{ matrix.target }} Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: artifacts/publish/SharpTree/release/SharpTree*
           name: ${{ matrix.name }}-build
