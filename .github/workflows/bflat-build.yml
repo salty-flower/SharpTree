@@ -29,4 +29,4 @@ jobs:
 
             - name: Build with Bflat
               run: |
-                  dotnet msbuild -target:BuildBflat -p:BflatExecutablePath=$PWD/bflat/bflat -p:BflatExtraArgs="--arch ${{ matrix.arch }} --os ${{ matrix.os }}"
+                  dotnet msbuild -target:BuildBflat -p:BflatExecutablePath=$PWD/bflat-sdk/bflat -p:BflatExtraArgs="--arch ${{ matrix.arch }} --os ${{ matrix.os }}"
