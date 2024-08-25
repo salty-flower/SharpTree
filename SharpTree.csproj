@@ -45,7 +45,7 @@
 
         <!-- Step 2: Copy all files in the current folder to Generated -->
         <ItemGroup>
-            <FilesToCopy Exclude="Generated\**\*.*" Include="*.cs" />
+            <FilesToCopy Exclude="Generated\**\*.*" Include="src\*.cs" />
         </ItemGroup>
         <Copy DestinationFolder="Generated" SourceFiles="@(FilesToCopy)" />
 
