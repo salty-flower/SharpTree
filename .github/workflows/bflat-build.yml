@@ -2,6 +2,9 @@ name: Bflat Build
 
 on:
     push:
+        paths:
+            - "src/**"
+            - ".github/workflows/bflat-build.yml"
 
 jobs:
     build:

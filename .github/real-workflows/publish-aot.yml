@@ -40,6 +40,8 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "src/**"
   workflow_dispatch:
 
 jobs:
