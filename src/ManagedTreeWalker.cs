@@ -88,31 +88,21 @@ public sealed class ManagedTreeWalker : ITreeWalker
 
     private void DisplayTreeWithFiles(string path)
     {
-        var entries = new DirectoryInfo(path).GetFileSystemInfos("*", Constants.EnumOptions);
-        if (entries.Length == 0)
+        var dirs = Directory.GetDirectories(path, "*", Constants.EnumOptions);
+        var files = Directory.GetFiles(path, "*", Constants.EnumOptions);
+        if (dirs.Length == 0 && files.Length == 0)
             return;
 
-        int numDirs = 0;
-        for (int i = 0; i < entries.Length; i++)
-        {
-            if (entries[i] is DirectoryInfo)
-                numDirs++;
-        }
-        int numFiles = entries.Length - numDirs;
-        bool hasFiles = numFiles > 0;
+        bool hasFiles = files.Length > 0;
 
-        if (numDirs > 0)
+        if (dirs.Length > 0)
         {
             var color =
                 currentDepth % 2 == 1 ? TreeRenderer.OddColor : TreeRenderer.EvenColor;
 
-            int dirIndex = 0;
-            for (int i = 0; i < entries.Length; i++)
+            for (int i = 0; i < dirs.Length; i++)
             {
-                if (entries[i] is not DirectoryInfo)
-                    continue;
-
-                bool isLastDir = dirIndex == numDirs - 1;
+                bool isLastDir = i == dirs.Length - 1;
                 bool isLastEntry = isLastDir && !hasFiles;
 
                 renderer.WriteIndent();
@@ -120,41 +110,33 @@ public sealed class ManagedTreeWalker : ITreeWalker
                     isLastEntry ? TreeRenderer.LastBranch : TreeRenderer.Branch
                 );
                 renderer.WriteUtf8(color);
-                renderer.WriteChars(entries[i].Name.AsSpan());
+                renderer.WriteChars(Path.GetFileName(dirs[i].AsSpan()));
                 renderer.WriteUtf8(TreeRenderer.ResetColor);
                 renderer.WriteNewline();
 
                 renderer.PushIndent(isLastEntry);
                 currentDepth++;
-                DisplayTree(entries[i].FullName);
+                DisplayTree(dirs[i]);
                 currentDepth--;
                 renderer.PopIndent();
-
-                dirIndex++;
             }
 
-            dirCount += numDirs;
+            dirCount += dirs.Length;
         }
 
         if (hasFiles)
         {
-            int fileIndex = 0;
-            for (int i = 0; i < entries.Length; i++)
+            for (int i = 0; i < files.Length; i++)
             {
-                if (entries[i] is DirectoryInfo)
-                    continue;
-
-                bool isLast = fileIndex == numFiles - 1;
+                bool isLast = i == files.Length - 1;
 
                 renderer.WriteIndent();
                 renderer.WriteUtf8(isLast ? TreeRenderer.LastBranch : TreeRenderer.Branch);
-                renderer.WriteChars(entries[i].Name.AsSpan());
+                renderer.WriteChars(Path.GetFileName(files[i].AsSpan()));
                 renderer.WriteNewline();
-
-                fileIndex++;
             }
 
-            fileCount += numFiles;
+            fileCount += files.Length;
         }
     }
 }

@@ -30,7 +30,9 @@ public class TreeCommand
 
         ITreeWalker walker = OperatingSystem.IsMacOS()
             ? new FtsTreeWalker()
-            : new ManagedTreeWalker();
+            : OperatingSystem.IsLinux()
+                ? new LinuxTreeWalker()
+                : new ManagedTreeWalker();
 
         var (dirs, files) = walker.Walk(path, includeFiles, maxDepth, renderer);
 
