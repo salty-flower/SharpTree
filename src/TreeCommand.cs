@@ -1,23 +1,31 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading.Tasks;
 using ConsoleAppFramework;
 
 namespace SharpTree;
 
 public partial class TreeCommand
 {
-    private readonly StringBuilder sb = new();
-    private int dirCount = 0;
-    private int fileCount = 0;
+    private int dirCount;
+    private int fileCount;
     private int maxDepth = -1;
-    private int currentDepth = 0;
-    private bool includeFiles = false;
-    private int flushInterval = 500;
+    private int currentDepth;
+    private bool includeFiles;
+    private int flushInterval;
     private readonly Stopwatch stopwatch = new();
-    private BufferedStream bufferedOutput = null!;
+    private Stream outputStream = null!;
+
+    // Direct UTF-8 output buffer — no StringBuilder, no transcoding for constants
+    private byte[] outputBuf = new byte[Constants.BufferSize];
+    private int outputPos;
+
+    // UTF-8 indent buffer (│ is 3 bytes in UTF-8, so levels are variable-width)
+    private readonly byte[] indentBuf = new byte[8192];
+    private int indentByteLen;
+    private readonly int[] indentLevelSize = new int[1024];
 
     /// <summary>
     /// Display a tree of the specified directory.
@@ -27,7 +35,7 @@ public partial class TreeCommand
     /// <param name="maxDepth">-m</param>
     /// <param name="flushInterval">-t, Flush output to stdout every x ms. -1 to disable.</param>
     [Command("")]
-    public async Task Tree(
+    public void Tree(
         string path = ".",
         bool includeFiles = false,
         int maxDepth = -1,
@@ -40,23 +48,56 @@ public partial class TreeCommand
         path = Path.GetFullPath(path);
 
         using (
-            bufferedOutput = new BufferedStream(Console.OpenStandardOutput(), Constants.BufferSize)
+            outputStream = new BufferedStream(Console.OpenStandardOutput(), Constants.BufferSize)
         )
         {
-            InitializeOutput(path);
+            WriteHeader(path);
             stopwatch.Start();
 
-            await DisplayTreeAsync(path, "");
+            DisplayTree(path);
 
-            FinalizeOutput();
-            await WriteBufferAsync();
+            WriteFooter();
+            Flush();
         }
     }
 
-    private async Task WriteBufferAsync()
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void EnsureCapacity(int needed)
     {
-        var buffer = sb.ToString();
-        await bufferedOutput.WriteAsync(Encoding.UTF8.GetBytes(buffer));
-        await bufferedOutput.FlushAsync();
+        if (outputPos + needed > outputBuf.Length)
+            Flush();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void WriteUtf8(ReadOnlySpan<byte> bytes)
+    {
+        EnsureCapacity(bytes.Length);
+        bytes.CopyTo(outputBuf.AsSpan(outputPos));
+        outputPos += bytes.Length;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void WriteChars(ReadOnlySpan<char> chars)
+    {
+        int maxBytes = Encoding.UTF8.GetMaxByteCount(chars.Length);
+        EnsureCapacity(maxBytes);
+        outputPos += Encoding.UTF8.GetBytes(chars, outputBuf.AsSpan(outputPos));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void WriteNewline()
+    {
+        EnsureCapacity(1);
+        outputBuf[outputPos++] = (byte)'\n';
+    }
+
+    private void Flush()
+    {
+        if (outputPos > 0)
+        {
+            outputStream.Write(outputBuf, 0, outputPos);
+            outputStream.Flush();
+            outputPos = 0;
+        }
     }
 }

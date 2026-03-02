@@ -1,121 +1,169 @@
-#define ENABLE_MANUAL_CAPACITY_UPGRADE
-
+using System;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 
 namespace SharpTree;
 
 public partial class TreeCommand
 {
-    private async Task DisplayTreeAsync(string path, string indent)
+    // Pre-encoded UTF-8 constants — zero transcoding at runtime
+    private static ReadOnlySpan<byte> Branch => "├─── "u8;
+    private static ReadOnlySpan<byte> LastBranch => "└─── "u8;
+    private static ReadOnlySpan<byte> PipeIndent => "│   "u8;
+    private static ReadOnlySpan<byte> SpaceIndent => "    "u8;
+    private static ReadOnlySpan<byte> OddColor => "\x1b[0;36m"u8;
+    private static ReadOnlySpan<byte> EvenColor => "\x1b[0;35m"u8;
+    private static ReadOnlySpan<byte> ResetColor => "\x1b[0m"u8;
+
+    private void DisplayTree(string path)
     {
         if (maxDepth != -1 && currentDepth > maxDepth)
             return;
 
-        await MaybeFlushOutputAsync();
+        MaybeFlush();
 
         try
         {
-            var thisLayerDirectories = Directory.GetDirectories(path, "*", Constants.EnumOptions);
-            var thisLayerFiles = Directory.GetFiles(path, "*", Constants.EnumOptions);
-
-#if (ENABLE_MANUAL_CAPACITY_UPGRADE)
-            ManualCapacityUpgrade(
-                thisLayerDirectories.Length + (includeFiles ? thisLayerFiles.Length : 0),
-                indent.Length
-            );
-#endif
-
-            if (thisLayerDirectories.Length > 0)
-            {
-                await DisplayDirectoriesAsync(thisLayerDirectories, thisLayerFiles, indent);
-            }
-            if (includeFiles && thisLayerFiles.Length > 0)
-            {
-                DisplayFiles(thisLayerFiles, indent);
-            }
+            if (includeFiles)
+                DisplayTreeWithFiles(path);
+            else
+                DisplayTreeDirsOnly(path);
         }
         catch (DirectoryNotFoundException)
         {
-            sb.AppendLine($"{indent}....[Invalid Directory]");
+            WriteIndent();
+            WriteUtf8("....[Invalid Directory]\n"u8);
         }
         catch (IOException)
         {
-            sb.AppendLine($"{indent}....[Inaccessible]");
+            WriteIndent();
+            WriteUtf8("....[Inaccessible]\n"u8);
         }
     }
 
-    private async Task DisplayDirectoriesAsync(
-        string[] thisLayerDirectories,
-        string[] thisLayerFiles,
-        string indent
-    )
+    private void DisplayTreeDirsOnly(string path)
     {
-        var directoryColorString =
-            currentDepth % 2 == 1
-                ? Constants.OddLayerDirectoryColorString
-                : Constants.EvenLayerDirectoryColorString;
-        // Handle all but the last item
-        for (int i = 0; i < thisLayerDirectories.Length - 1; i++)
-        {
-            var dir = thisLayerDirectories[i];
-            sb.Append(indent);
-            sb.Append("├─── ");
-            sb.Append(directoryColorString);
-            sb.Append(Path.GetFileName(dir));
-            sb.AppendLine(Constants.ColorResetString);
+        var dirs = Directory.GetDirectories(path, "*", Constants.EnumOptions);
+        if (dirs.Length == 0) return;
 
-            var subIndent = indent + "│   ";
+        var color = currentDepth % 2 == 1 ? OddColor : EvenColor;
+
+        for (int i = 0; i < dirs.Length; i++)
+        {
+            bool isLast = i == dirs.Length - 1;
+
+            WriteIndent();
+            WriteUtf8(isLast ? LastBranch : Branch);
+            WriteUtf8(color);
+            WriteChars(Path.GetFileName(dirs[i].AsSpan()));
+            WriteUtf8(ResetColor);
+            WriteNewline();
+
+            PushIndent(isLast);
             currentDepth++;
-            await DisplayTreeAsync(dir, subIndent);
+            DisplayTree(dirs[i]);
             currentDepth--;
+            PopIndent();
         }
 
-        // Handle the last item separately
-        if (thisLayerDirectories.Length > 0)
-        {
-            var lastDir = thisLayerDirectories[^1];
-            bool v = thisLayerFiles.Length > 0 && includeFiles;
-            sb.Append(indent);
-            sb.Append(v ? "├" : "└");
-            sb.Append("─── ");
-            sb.Append(directoryColorString);
-            sb.Append(Path.GetFileName(lastDir));
-            sb.AppendLine(Constants.ColorResetString);
-
-            var subIndent = indent + (v ? "│" : " ") + "   ";
-            currentDepth++;
-            await DisplayTreeAsync(lastDir, subIndent);
-            currentDepth--;
-        }
-
-        dirCount += thisLayerDirectories.Length;
+        dirCount += dirs.Length;
     }
 
-    private void DisplayFiles(string[] thisLayerFiles, string indent)
+    private void DisplayTreeWithFiles(string path)
     {
-        for (int i = 0; i < thisLayerFiles.Length - 1; i++)
+        var entries = new DirectoryInfo(path).GetFileSystemInfos("*", Constants.EnumOptions);
+        if (entries.Length == 0) return;
+
+        int numDirs = 0;
+        for (int i = 0; i < entries.Length; i++)
         {
-            var file = thisLayerFiles[i];
-            sb.Append(indent);
-            sb.Append("├─── ");
-            sb.AppendLine(Path.GetFileName(file));
+            if (entries[i] is DirectoryInfo)
+                numDirs++;
+        }
+        int numFiles = entries.Length - numDirs;
+        bool hasFiles = numFiles > 0;
+
+        if (numDirs > 0)
+        {
+            var color = currentDepth % 2 == 1 ? OddColor : EvenColor;
+
+            int dirIndex = 0;
+            for (int i = 0; i < entries.Length; i++)
+            {
+                if (entries[i] is not DirectoryInfo)
+                    continue;
+
+                bool isLastDir = dirIndex == numDirs - 1;
+                bool isLastEntry = isLastDir && !hasFiles;
+
+                WriteIndent();
+                WriteUtf8(isLastEntry ? LastBranch : Branch);
+                WriteUtf8(color);
+                WriteChars(entries[i].Name.AsSpan());
+                WriteUtf8(ResetColor);
+                WriteNewline();
+
+                PushIndent(isLastEntry);
+                currentDepth++;
+                DisplayTree(entries[i].FullName);
+                currentDepth--;
+                PopIndent();
+
+                dirIndex++;
+            }
+
+            dirCount += numDirs;
         }
 
-        sb.Append(indent);
-        sb.Append("└─── ");
-        sb.AppendLine(Path.GetFileName(thisLayerFiles[^1]));
-        fileCount += thisLayerFiles.Length;
+        if (hasFiles)
+        {
+            int fileIndex = 0;
+            for (int i = 0; i < entries.Length; i++)
+            {
+                if (entries[i] is DirectoryInfo)
+                    continue;
+
+                bool isLast = fileIndex == numFiles - 1;
+
+                WriteIndent();
+                WriteUtf8(isLast ? LastBranch : Branch);
+                WriteChars(entries[i].Name.AsSpan());
+                WriteNewline();
+
+                fileIndex++;
+            }
+
+            fileCount += numFiles;
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private async Task MaybeFlushOutputAsync()
+    private void WriteIndent()
+    {
+        WriteUtf8(indentBuf.AsSpan(0, indentByteLen));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void PushIndent(bool isLastEntry)
+    {
+        ReadOnlySpan<byte> segment = isLastEntry ? SpaceIndent : PipeIndent;
+        segment.CopyTo(indentBuf.AsSpan(indentByteLen));
+        indentLevelSize[currentDepth] = segment.Length;
+        indentByteLen += segment.Length;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void PopIndent()
+    {
+        indentByteLen -= indentLevelSize[currentDepth];
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void MaybeFlush()
     {
         if (flushInterval != -1 && stopwatch.Elapsed.TotalMilliseconds > flushInterval)
         {
-            await WriteBufferAsync();
-            sb.Clear();
+            Flush();
             stopwatch.Restart();
         }
     }
