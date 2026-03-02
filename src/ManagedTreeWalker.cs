@@ -58,6 +58,11 @@ public sealed class ManagedTreeWalker
             renderer.WriteIndent();
             renderer.WriteUtf8("....[Inaccessible]\n"u8);
         }
+        catch (UnauthorizedAccessException)
+        {
+            renderer.WriteIndent();
+            renderer.WriteUtf8("....[Access Denied]\n"u8);
+        }
     }
 
     private void DisplayTreeDirsOnly(string path)

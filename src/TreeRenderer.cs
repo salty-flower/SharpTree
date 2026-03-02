@@ -23,7 +23,7 @@ public sealed class TreeRenderer
     private int outputPos;
     private readonly byte[] indentBuf = new byte[8192];
     private int indentByteLen;
-    private readonly int[] indentLevelSize = new int[1024];
+    private readonly int[] indentLevelSize = new int[4096];
     private int depth;
 
     public TreeRenderer(Stream output, int flushInterval)
@@ -79,12 +79,19 @@ public sealed class TreeRenderer
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void PushIndent(bool isLastEntry)
     {
-        ReadOnlySpan<byte> segment = isLastEntry ? SpaceIndent : PipeIndent;
-        if (depth >= indentLevelSize.Length || indentByteLen + segment.Length > indentBuf.Length)
+        if (depth >= indentLevelSize.Length)
             return;
-        segment.CopyTo(indentBuf.AsSpan(indentByteLen));
-        indentLevelSize[depth] = segment.Length;
-        indentByteLen += segment.Length;
+        ReadOnlySpan<byte> segment = isLastEntry ? SpaceIndent : PipeIndent;
+        if (indentByteLen + segment.Length <= indentBuf.Length)
+        {
+            segment.CopyTo(indentBuf.AsSpan(indentByteLen));
+            indentLevelSize[depth] = segment.Length;
+            indentByteLen += segment.Length;
+        }
+        else
+        {
+            indentLevelSize[depth] = 0;
+        }
         depth++;
     }
 
