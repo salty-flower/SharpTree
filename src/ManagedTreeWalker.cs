@@ -3,7 +3,7 @@ using System.IO;
 
 namespace SharpTree;
 
-public sealed class ManagedTreeWalker : ITreeWalker
+public sealed class ManagedTreeWalker
 {
     private int dirCount;
     private int fileCount;
