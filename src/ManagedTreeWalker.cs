@@ -13,6 +13,8 @@ public sealed class ManagedTreeWalker
     private bool includeFiles;
     private int currentDepth;
     private TreeRenderer renderer = null!;
+    private List<string>[] dirListPool = Array.Empty<List<string>>();
+    private List<string>[] fileListPool = Array.Empty<List<string>>();
 
     public (int dirs, int files) Walk(
         string rootPath,
@@ -88,12 +90,32 @@ public sealed class ManagedTreeWalker
         dirCount += dirs.Length;
     }
 
+    private List<string> GetPooledList(ref List<string>[] pool)
+    {
+        if (currentDepth >= pool.Length)
+        {
+            int newLen = Math.Max(pool.Length * 2, currentDepth + 1);
+            Array.Resize(ref pool, newLen);
+        }
+        var list = pool[currentDepth];
+        if (list == null)
+        {
+            list = new List<string>();
+            pool[currentDepth] = list;
+        }
+        else
+        {
+            list.Clear();
+        }
+        return list;
+    }
+
     private void DisplayTreeWithFiles(string path)
     {
         // Single-pass enumeration: read directory once instead of
         // GetDirectories + GetFiles which reads it twice.
-        var dirs = new List<string>();
-        var files = new List<string>();
+        var dirs = GetPooledList(ref dirListPool);
+        var files = GetPooledList(ref fileListPool);
 
         foreach (var (value, isDir) in new FileSystemEnumerable<(string, bool)>(
             path,

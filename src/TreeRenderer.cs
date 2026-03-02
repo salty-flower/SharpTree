@@ -46,10 +46,23 @@ public sealed class TreeRenderer
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void WriteChars(ReadOnlySpan<char> chars)
     {
-        int maxBytes = Encoding.UTF8.GetMaxByteCount(chars.Length);
-        if (outputPos + maxBytes > outputBuf.Length)
+        if (outputPos + chars.Length * 3 > outputBuf.Length)
             DrainBuffer();
-        outputPos += Encoding.UTF8.GetBytes(chars, outputBuf.AsSpan(outputPos));
+        // Fast ASCII path: most filenames are pure ASCII
+        bool allAscii = true;
+        for (int i = 0; i < chars.Length; i++)
+        {
+            if (chars[i] > 127) { allAscii = false; break; }
+        }
+        if (allAscii)
+        {
+            for (int i = 0; i < chars.Length; i++)
+                outputBuf[outputPos++] = (byte)chars[i];
+        }
+        else
+        {
+            outputPos += Encoding.UTF8.GetBytes(chars, outputBuf.AsSpan(outputPos));
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
