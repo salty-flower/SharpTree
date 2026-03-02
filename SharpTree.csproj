@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <InvariantGlobalization>true</InvariantGlobalization>
     </PropertyGroup>
 
@@ -28,6 +28,11 @@
         <DebugSymbols>false</DebugSymbols>
         <DebugType>none</DebugType>
     </PropertyGroup>
+
+    <ItemGroup Condition="'$(Configuration)' == 'Release' and $([MSBuild]::IsOSPlatform('OSX'))">
+        <LinkerArg Include="-L/opt/homebrew/lib" />
+        <LinkerArg Include="-L/opt/homebrew/opt/openssl/lib" />
+    </ItemGroup>
 
     <Target Name="BuildBflat">
         <!-- Step 0: Clear Generated directory if it exists and is not empty -->
