@@ -28,9 +28,11 @@ public class TreeCommand
         renderer.WriteHeader(path);
         renderer.Start();
 
-        var walker = new ManagedTreeWalker();
-
-        var (dirs, files) = walker.Walk(path, includeFiles, maxDepth, renderer);
+        int dirs, files;
+        if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
+            (dirs, files) = new NativeTreeWalker().Walk(path, includeFiles, maxDepth, renderer);
+        else
+            (dirs, files) = new ManagedTreeWalker().Walk(path, includeFiles, maxDepth, renderer);
 
         renderer.WriteFooter(dirs, files);
         renderer.Flush();
