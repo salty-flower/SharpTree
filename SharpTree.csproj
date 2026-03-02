@@ -27,6 +27,7 @@
         <PublishSelfContained>true</PublishSelfContained>
         <DebugSymbols>false</DebugSymbols>
         <DebugType>none</DebugType>
+        <IlcOptimizationPreference>Speed</IlcOptimizationPreference>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(Configuration)' == 'Release' and $([MSBuild]::IsOSPlatform('OSX'))">

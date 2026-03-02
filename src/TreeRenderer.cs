@@ -38,7 +38,7 @@ public sealed class TreeRenderer
     public void WriteUtf8(ReadOnlySpan<byte> bytes)
     {
         if (outputPos + bytes.Length > outputBuf.Length)
-            Flush();
+            DrainBuffer();
         bytes.CopyTo(outputBuf.AsSpan(outputPos));
         outputPos += bytes.Length;
     }
@@ -48,7 +48,7 @@ public sealed class TreeRenderer
     {
         int maxBytes = Encoding.UTF8.GetMaxByteCount(chars.Length);
         if (outputPos + maxBytes > outputBuf.Length)
-            Flush();
+            DrainBuffer();
         outputPos += Encoding.UTF8.GetBytes(chars, outputBuf.AsSpan(outputPos));
     }
 
@@ -56,7 +56,7 @@ public sealed class TreeRenderer
     public void WriteNewline()
     {
         if (outputPos + 1 > outputBuf.Length)
-            Flush();
+            DrainBuffer();
         outputBuf[outputPos++] = (byte)'\n';
     }
 
@@ -85,19 +85,25 @@ public sealed class TreeRenderer
     {
         if (flushInterval != -1 && stopwatch.Elapsed.TotalMilliseconds > flushInterval)
         {
-            Flush();
+            DrainBuffer();
             stopwatch.Restart();
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void DrainBuffer()
+    {
+        if (outputPos > 0)
+        {
+            output.Write(outputBuf, 0, outputPos);
+            outputPos = 0;
         }
     }
 
     public void Flush()
     {
-        if (outputPos > 0)
-        {
-            output.Write(outputBuf, 0, outputPos);
-            output.Flush();
-            outputPos = 0;
-        }
+        DrainBuffer();
+        output.Flush();
     }
 
     public void WriteHeader(string path)

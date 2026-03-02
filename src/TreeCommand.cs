@@ -18,12 +18,12 @@ public class TreeCommand
         string path = ".",
         bool includeFiles = false,
         int maxDepth = -1,
-        int flushInterval = 1
+        int flushInterval = -1
     )
     {
         path = Path.GetFullPath(path);
 
-        using var output = new BufferedStream(Console.OpenStandardOutput(), Constants.BufferSize);
+        using var output = Console.OpenStandardOutput();
         var renderer = new TreeRenderer(output, flushInterval);
         renderer.WriteHeader(path);
         renderer.Start();
