@@ -80,6 +80,8 @@ public sealed class TreeRenderer
     public void PushIndent(bool isLastEntry)
     {
         ReadOnlySpan<byte> segment = isLastEntry ? SpaceIndent : PipeIndent;
+        if (depth >= indentLevelSize.Length || indentByteLen + segment.Length > indentBuf.Length)
+            return;
         segment.CopyTo(indentBuf.AsSpan(indentByteLen));
         indentLevelSize[depth] = segment.Length;
         indentByteLen += segment.Length;
@@ -89,6 +91,8 @@ public sealed class TreeRenderer
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void PopIndent()
     {
+        if (depth <= 0)
+            return;
         depth--;
         indentByteLen -= indentLevelSize[depth];
     }

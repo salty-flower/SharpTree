@@ -75,33 +75,38 @@ public sealed class NativeTreeWalker
         int savedPool = namePoolPos;
 
         // Phase 1: readdir all entries, classify into dir/file pools
-        nint entry;
-        while ((entry = NativeDir.ReadDir(dirp)) != 0)
+        try
         {
-            if (NativeDir.IsDotOrDotDot(entry))
-                continue;
-
-            byte dtype = NativeDir.GetDType(entry);
-
-            if (dtype == NativeDir.DT_DIR)
+            nint entry;
+            while ((entry = NativeDir.ReadDir(dirp)) != 0)
             {
-                BufferName(NativeDir.GetName(entry), ref dirRefs, ref dirRefCount);
-            }
-            else if (dtype == NativeDir.DT_UNKNOWN)
-            {
-                var name = NativeDir.GetName(entry);
-                if (CheckIsDirectory(name))
-                    BufferName(name, ref dirRefs, ref dirRefCount);
+                if (NativeDir.IsDotOrDotDot(entry))
+                    continue;
+
+                byte dtype = NativeDir.GetDType(entry);
+
+                if (dtype == NativeDir.DT_DIR)
+                {
+                    BufferName(NativeDir.GetName(entry), ref dirRefs, ref dirRefCount);
+                }
+                else if (dtype == NativeDir.DT_UNKNOWN)
+                {
+                    var name = NativeDir.GetName(entry);
+                    if (CheckIsDirectory(name))
+                        BufferName(name, ref dirRefs, ref dirRefCount);
+                    else if (includeFiles)
+                        BufferName(name, ref fileRefs, ref fileRefCount);
+                }
                 else if (includeFiles)
-                    BufferName(name, ref fileRefs, ref fileRefCount);
-            }
-            else if (includeFiles)
-            {
-                BufferName(NativeDir.GetName(entry), ref fileRefs, ref fileRefCount);
+                {
+                    BufferName(NativeDir.GetName(entry), ref fileRefs, ref fileRefCount);
+                }
             }
         }
-
-        NativeDir.CloseDir(dirp);
+        finally
+        {
+            NativeDir.CloseDir(dirp);
+        }
 
         int localDirEnd = dirRefCount;
         int localFileEnd = fileRefCount;
@@ -127,7 +132,10 @@ public sealed class NativeTreeWalker
                 renderer.WriteUtf8(TreeRenderer.ResetColor);
                 renderer.WriteNewline();
 
-                // Build child path in-place
+                // Build child path in-place; skip recursion if it would overflow pathBuf
+                if (pathLen + 1 + dirName.Length >= pathBuf.Length)
+                    continue;
+
                 int savedPathLen = pathLen;
                 pathBuf[pathLen] = (byte)'/';
                 dirName.CopyTo(pathBuf.AsSpan(pathLen + 1));
@@ -182,6 +190,9 @@ public sealed class NativeTreeWalker
     private bool CheckIsDirectory(ReadOnlySpan<byte> name)
     {
         int tempLen = pathLen + 1 + name.Length;
+        if (tempLen >= pathBuf.Length)
+            return false;
+
         pathBuf[pathLen] = (byte)'/';
         name.CopyTo(pathBuf.AsSpan(pathLen + 1));
         pathBuf[tempLen] = 0;
