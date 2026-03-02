@@ -108,7 +108,7 @@ public sealed class TreeRenderer
     {
         if (outputPos > 0)
         {
-            output.Write(outputBuf, 0, outputPos);
+            output.Write(outputBuf.AsSpan(0, outputPos));
             outputPos = 0;
         }
     }
@@ -121,22 +121,36 @@ public sealed class TreeRenderer
 
     public void WriteHeader(string path)
     {
-        WriteChars($"Folder PATH listing for volume {Path.GetPathRoot(path)}");
+        var root = Path.GetPathRoot(path) ?? string.Empty;
+        WriteUtf8("Folder PATH listing for volume "u8);
+        WriteChars(root.AsSpan());
         WriteNewline();
-        WriteChars(
-            $"Volume serial number is {new DriveInfo(Path.GetPathRoot(path) ?? "")?.VolumeLabel ?? "Unknown"}"
-        );
+
+        string volumeLabel = "Unknown";
+        if (root.Length > 0)
+        {
+            var driveInfo = new DriveInfo(root);
+            if (!string.IsNullOrEmpty(driveInfo.VolumeLabel))
+                volumeLabel = driveInfo.VolumeLabel;
+        }
+        WriteUtf8("Volume serial number is "u8);
+        WriteChars(volumeLabel.AsSpan());
         WriteNewline();
-        WriteChars(path);
+
+        WriteChars(path.AsSpan());
         WriteNewline();
     }
 
     public void WriteFooter(int dirs, int files)
     {
         WriteNewline();
-        WriteChars(
-            $"{dirs} Dir{(dirs > 1 ? "(s)" : "")}, {files} File{(files > 1 ? "(s)" : "")}"
-        );
+        Span<char> numBuf = stackalloc char[11];
+        dirs.TryFormat(numBuf, out int written);
+        WriteChars(numBuf[..written]);
+        WriteUtf8(dirs > 1 ? " Dir(s), "u8 : " Dir, "u8);
+        files.TryFormat(numBuf, out written);
+        WriteChars(numBuf[..written]);
+        WriteUtf8(files > 1 ? " File(s)"u8 : " File"u8);
         WriteNewline();
     }
 }
